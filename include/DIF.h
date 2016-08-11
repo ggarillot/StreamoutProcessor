@@ -140,7 +140,7 @@ DIFPtr(unsigned char* p,uint32_t max_size) : theSize_(max_size),theDIF_(p)
   }
   catch (std::string e)
   {
-    std::cout<<"DIF "<<getID()<<" T ? "<<hasTemperature()<<" " <<e<<std::endl;
+    std::cout<<" Exception: DIF "<<getID()<<" T ? "<<hasTemperature()<<" " <<e<<std::endl;
   }
 }
 

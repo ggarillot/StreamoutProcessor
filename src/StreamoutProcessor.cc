@@ -1,7 +1,7 @@
 
 
 
-// -- streamoutProcessor 
+// -- streamoutProcessor
 #include "StreamoutProcessor.h"
 #include "DIFUnpacker.h"
 #include "DIF.h"
@@ -56,14 +56,14 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                            "RU_XDAQ Collection Name",
                            m_inputCollectionName,
                            m_outputCollectionName);
-  
+
   m_outputCollectionName = "DHCALRawHits";
   registerOutputCollection( LCIO::RAWCALORIMETERHIT,
                             "OutputCollectionName" ,
                             "RawCaloHit Collection Name",
                             m_outputCollectionName,
                             m_outputCollectionName);
-  
+
   m_outputFileName = "StreamoutProcessorOutput.slcio";
   registerProcessorParameter("LCIOOutputFile",
                              "LCIO file",
@@ -75,26 +75,26 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                              "DifID number for the Cerenkov signal",
                              m_cerenkovDifId,
                              m_cerenkovDifId);
-  
-  
+
+
   m_ruShift = 23;
   registerProcessorParameter("RU_SHIFT",
                              "Byte shift for raw data reading",
                              m_ruShift,
                              m_ruShift);
-  
+
   m_xdaqShift = 24;
   registerProcessorParameter("XDAQ_SHIFT",
                              "XDAQ Byte shift for raw data reading",
                              m_xdaqShift,
                              m_xdaqShift);
-    
+
   m_dropFirstRU = false;
   registerProcessorParameter("DropFirstRU",
                              "Drop first Trigger event (bool)",
                              m_dropFirstRU,
                              m_dropFirstRU);
-    
+
   m_skipFullAsics = true;
   registerProcessorParameter("SkipFullAsic",
                              "Skip full Asic event (bool)",
@@ -102,29 +102,29 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                              m_skipFullAsics);
 
   // registerProcessorParameter( "RootFileName" ,
-		// 	      "File name for the root output",
-		// 	      outputRootName,
-		// 	      std::string("toto.root") );
+  //        "File name for the root output",
+  //        outputRootName,
+  //        std::string("toto.root") );
 }
 
 //-------------------------------------------------------------------------------------------------
 // void StreamoutProcessor::InitParameters()
 // {
-  /*------------algorithm::Cluster------------*/
-  // registerProcessorParameter( "Streamout::PrintDebug" ,
-  //   			      "If true, processor will print some debug information",
-  //   			      m_EfficiencyParameterSetting.printDebug,
-  //   			      (bool) false );
+/*------------algorithm::Cluster------------*/
+// registerProcessorParameter( "Streamout::PrintDebug" ,
+//              "If true, processor will print some debug information",
+//              m_EfficiencyParameterSetting.printDebug,
+//              (bool) false );
 
-  // m_EfficiencyParameterSetting.trackingParams=m_TrackingParameterSetting;
+// m_EfficiencyParameterSetting.trackingParams=m_TrackingParameterSetting;
 
 //   std::vector<float> vec,cev;
 //   vec.push_back(-500.0);
 //   vec.push_back(500.0);
 //   registerProcessorParameter( "Layer::DetectorTransversalSize" ,
-//     			      "Define the detector transversal size used by efficiency algorithm (vector size must be 2 or 4; if 2 -> first value is min, second value is max; if 4 -> two first values define x edges , two last values define y edges) ",
-//     			      cev,
-//     			      vec );
+//                "Define the detector transversal size used by efficiency algorithm (vector size must be 2 or 4; if 2 -> first value is min, second value is max; if 4 -> two first values define x edges , two last values define y edges) ",
+//                cev,
+//                vec );
 // }
 
 //-------------------------------------------------------------------------------------------------
@@ -149,8 +149,8 @@ void StreamoutProcessor::init()
   white    = cwhite;
 
   m_pLCStreamoutWriter = new LCStreamoutWriter(m_outputFileName);
-  
-  
+
+
 
   // rootFile = new TFile(outputRootName.c_str(),"RECREATE");
 
@@ -222,23 +222,23 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   {
     pLCCollection = pLCEvent->getCollection(m_inputCollectionName);
   }
-  catch(EVENT::DataNotAvailableException &exception)
+  catch (EVENT::DataNotAvailableException &exception)
   {
     streamlog_out( ERROR ) <<  " - Input collection name not found : " << m_inputCollectionName << std::endl;
-return;
+    return;
   }
-  
-  if(NULL == pLCCollection)
+
+  if (NULL == pLCCollection)
   {
     streamlog_out( ERROR ) <<  " - Collection '" << m_inputCollectionName << "' is empty...exiting" << std::endl;
-return;
+    return;
   }
 
   // check collection type
-  if(EVENT::LCIO::LCGENERICOBJECT != pLCCollection->getTypeName())
+  if (EVENT::LCIO::LCGENERICOBJECT != pLCCollection->getTypeName())
   {
     streamlog_out( ERROR ) <<  " - Wrong collection type : expected '" << EVENT::LCIO::LCGENERICOBJECT << "' found '" << pLCCollection->getTypeName() << "'...exiting" << std::endl;
-return;
+    return;
   }
 
   int numElements = pLCCollection->getNumberOfElements();// hit number
@@ -256,25 +256,25 @@ return;
   pRawCalorimeterHitCollection->setFlag(chFlag.getFlag());
 
   // convert the input elements to DIFPtrs
-  for(unsigned int e=0 ; e<pLCCollection->getNumberOfElements() ; e++)
+  for (unsigned int e = 0 ; e < pLCCollection->getNumberOfElements() ; e++)
   {
-    if(e == 0 && m_dropFirstRU)
+    if (e == 0 && m_dropFirstRU)
       continue;
 
     LMGeneric *pLCGenericObject = (LMGeneric *)(pLCCollection->getElementAt(e));
 
-    if(NULL == pLCGenericObject)
+    if (NULL == pLCGenericObject)
       continue;
 
     // grab the generic object contents
     int *pGenericRawBuffer = &(pLCGenericObject->getIntVector()[0]);
     unsigned char *pRawBuffer = (unsigned char *)pGenericRawBuffer;
-    uint32_t ruSize = pLCGenericObject->getNInt()*sizeof(int32_t);
+    uint32_t ruSize = pLCGenericObject->getNInt() * sizeof(int32_t);
     uint32_t idStart = DIFUnpacker::getStartOfDIF(pRawBuffer, ruSize, m_xdaqShift);
 
     // create the DIF ptr
     unsigned char *pDifRawBuffer = &pRawBuffer[idStart];
-    DIFPtr *pDifPtr = new DIFPtr(pDifRawBuffer, ruSize-idStart+1);
+    DIFPtr *pDifPtr = new DIFPtr(pDifRawBuffer, ruSize - idStart + 1);
     uint difId = pDifPtr->getID();
 
     int tag = 0;
@@ -290,10 +290,10 @@ return;
       pDifPtr->dumpDIFInfo();
       try
       {
-        DIFUnpacker::getFramePtrPrint(theFrames_,theLines_,ruSize-idStart+1, pDifRawBuffer);
-      }catch (std::string e)
+        DIFUnpacker::getFramePtrPrint(theFrames_, theLines_, ruSize - idStart + 1, pDifRawBuffer);
+      } catch (std::string e)
       {
-        streamlog_out( ERROR ) <<"DIF "<<pDifPtr->getID()<<" " <<e << std::endl;
+        streamlog_out( ERROR ) << "DIF " << pDifPtr->getID() << " " << e << std::endl;
         delete pRawCalorimeterHitCollection;
         return;
       }
@@ -301,7 +301,7 @@ return;
       streamlog_out( DEBUG ) << " - Hit in Dif : " << pDifPtr->getID() << "\t NFrames : " <<  pDifPtr->getNumberOfFrames() << std::endl;
       for (uint32_t i = 0; i < pDifPtr->getNumberOfFrames(); i++)
       {
-        streamlog_out( DEBUG ) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i)<< std::endl;
+        streamlog_out( DEBUG ) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i) << std::endl;
         for (uint32_t j = 0; j < 64; j++)
         {
           if (pDifPtr->getFrameLevel(i, j, 0))
@@ -321,30 +321,30 @@ return;
       streamlog_out( DEBUG )  << " - Tag : " << tag << std::endl;
 
 
-    for(unsigned int f=0 ; f<pDifPtr->getNumberOfFrames() ; f++)
+    for (unsigned int f = 0 ; f < pDifPtr->getNumberOfFrames() ; f++)
     {
       // find whether the dif has full asics
-      if(m_skipFullAsics)
+      if (m_skipFullAsics)
       {
         unsigned int touchedChannels = 0;
 
-        for(unsigned int ch=0 ; ch<64 ; ch++)
+        for (unsigned int ch = 0 ; ch < 64 ; ch++)
         {
-          if(!(pDifPtr->getFrameLevel(f, ch, 0) || pDifPtr->getFrameLevel(f, ch, 1)))
+          if (!(pDifPtr->getFrameLevel(f, ch, 0) || pDifPtr->getFrameLevel(f, ch, 1)))
             continue;
 
           touchedChannels++;
         }
 
-        if(64 == touchedChannels)
+        if (64 == touchedChannels)
           continue;
       }
 
       // create the raw calorimeter hits
-      for(unsigned int ch=0 ; ch<64 ; ch++)
+      for (unsigned int ch = 0 ; ch < 64 ; ch++)
       {
         // skip empty pads
-        if(!(pDifPtr->getFrameLevel(f, ch, 0) || pDifPtr->getFrameLevel(f, ch, 1)))
+        if (!(pDifPtr->getFrameLevel(f, ch, 0) || pDifPtr->getFrameLevel(f, ch, 1)))
           continue;
 
         unsigned long int id0 = 0;
@@ -356,16 +356,16 @@ return;
         std::bitset<3> amplitudeBitSet;
 
         // 8 firsts bits: DIF Id
-        id0 = (unsigned long int)(((unsigned short)pDifPtr->getID())&0xFF);
+        id0 = (unsigned long int)(((unsigned short)pDifPtr->getID()) & 0xFF);
 
         // 8 next bits:   Asic Id
-        id0 += (unsigned long int)(((unsigned short)pDifPtr->getFrameAsicHeader(f)<<8)&0xFF00);
+        id0 += (unsigned long int)(((unsigned short)pDifPtr->getFrameAsicHeader(f) << 8) & 0xFF00);
 
         //6 next bits:   Asic's Channel
-        id0 += (unsigned long int)((channel.to_ulong()<<16)&0x3F0000);
+        id0 += (unsigned long int)((channel.to_ulong() << 16) & 0x3F0000);
 
-          //(40 barrel + 24 endcap) modules to be coded here 0 for testbeam (over 6 bits)
-        id0+=(unsigned long int)((barrelEndcapModule<<22)&0xFC00000);
+        //(40 barrel + 24 endcap) modules to be coded here 0 for testbeam (over 6 bits)
+        id0 += (unsigned long int)((barrelEndcapModule << 22) & 0xFC00000);
 
         // cell id 1
         id1 = (unsigned long int)(pDifPtr->getFrameBCID(f));
@@ -390,8 +390,8 @@ return;
     trigger[0] = pDifPtr->getDTC(); // DifTriggerCount
     trigger[1] = pDifPtr->getGTC(); // GeneralTriggerCount
     trigger[2] = pDifPtr->getBCID();
-    trigger[3] = pDifPtr->getAbsoluteBCID()&0xFFFFFF;
-    trigger[4] = (pDifPtr->getAbsoluteBCID()/(0xFFFFFF+1))&0xFFFFFF;
+    trigger[3] = pDifPtr->getAbsoluteBCID() & 0xFFFFFF;
+    trigger[4] = (pDifPtr->getAbsoluteBCID() / (0xFFFFFF + 1)) & 0xFFFFFF;
     trigger[5] = pDifPtr->getTASU1();
     trigger[6] = pDifPtr->getTASU2();
     trigger[7] = pDifPtr->getTDIF();
@@ -404,11 +404,11 @@ return;
 
   // check if any hits have been added to the collection
   // should never happened except if empty event
-  if(pRawCalorimeterHitCollection->getNumberOfElements() == 0)
+  if (pRawCalorimeterHitCollection->getNumberOfElements() == 0)
   {
     streamlog_out( ERROR )  << "No raw calorimeter hits produced !" << std::endl;
     delete pRawCalorimeterHitCollection;
-    return;    
+    return;
   }
 
   // add the collection to event
@@ -422,22 +422,22 @@ return;
   {
     pOutLCEvent->addCollection(pRawCalorimeterHitCollection, m_outputCollectionName);
   }
-  catch(IO::IOException &exception)
+  catch (IO::IOException &exception)
   {
     streamlog_out( ERROR ) << "Couldn't add collection '" << m_outputCollectionName << "' : already present" << std::endl;
     delete pRawCalorimeterHitCollection;
     return;
   }
-  
+
   try
   {
     m_pLCStreamoutWriter->processReconstructedEvent(pOutLCEvent);
   }
-  catch(IO::IOException &exception)
+  catch (IO::IOException &exception)
   {
-   streamlog_out( ERROR ) << "Failed to write event '" << m_nEvt << "' to file..." << std::endl; 
-   delete pRawCalorimeterHitCollection;
-   return;
+    streamlog_out( ERROR ) << "Failed to write event '" << m_nEvt << "' to file..." << std::endl;
+    delete pRawCalorimeterHitCollection;
+    return;
   }
   m_nEvt ++ ;
   streamlog_out( ERROR ) << "Event processed : " << m_nEvt << std::endl;
@@ -503,7 +503,7 @@ void StreamoutProcessor::setSkipFullAsic(bool skip)
 
 
 //-------------------------------------------------------------------------------------------------
-void StreamoutProcessor::end(){
+void StreamoutProcessor::end() {
   delete m_pLCStreamoutWriter;
 
   // delete algo_Cluster;
