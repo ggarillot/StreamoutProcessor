@@ -1,137 +1,216 @@
-from lxml import etree
+"""
+    Configuration module for Streamout Marlin processor
+    Generate the xml file with data imported from external config file
+"""
+
+from __future__ import print_function # import print function from py3 if running py2.x
+
+import os
+import sys
+import time
+import subprocess
 import shlex # split properly command line for Popen
-import os,sys,subprocess
+from lxml import etree
 
-if len(sys.argv) > 2:
-    runNumber=int(sys.argv[1] )
-    configFile=sys.argv[2]
-else:
-    print "Please give a run Number and config file"
-
-try:
-    exec("import %s  as config" % configFile)
-except ImportError:
-    raise Exception("cannot import config file '%s'" % configFile)
+# Import default config file, not needed here just for dumb editor not to complain about config not existing
+import config_streamout as config
 
 
-if len(sys.argv) > 3:
- fileNumber=int(sys.argv[3])
-else:
- fileNumber = 1
-# else:
-#   command_line = "ls -l %s | grep %d_I0_ | wc -l" % (config.dataPath,runNumber)
-#   print command_line
-#   args = shlex.split(command_line)
-#   print args
-#   proc = subprocess.Popen(args, stdout=PIPE, stderr=PIPE)
-#   child_stdout, child_stderr = proc.communicate("grep %d_I0_")
+'''
+'''
+# -----------------------------------------------------------------------------
+def xmlValueBuilder(rootHandle, xmlHandleName, value, parameterType=None, option=None, optionValue=None, xmlParList=None):
+    xmlHandle = etree.SubElement(rootHandle, "parameter", name=xmlHandleName)
+    if parameterType is not None:
+        xmlHandle.set("type", parameterType)
+    if option is not None:
+        xmlHandle.set(option, optionValue)
+    xmlHandle.text = value
+    xmlParList[xmlHandleName] = [value]
 
-  
-fileList = []
-for iFile in range(0,fileNumber):
-  fileList.append(config.inputFile % (config.dataPath,runNumber,iFile))
+    
+'''
+'''
+# -----------------------------------------------------------------------------
+def generateXML(inputFiles, outputFile, parList):
+    # generate XML
+    ## TAG: Execute
+    marlin = etree.Element('marlin')
+    execute = etree.SubElement(marlin, "execute")
+    for proc in config.processorList:
+        processor = etree.SubElement(execute, "processor", name=proc[0])
 
-print fileList
+    ## TAG: Global
+    glob = etree.SubElement(marlin, "global")
+    
+    # -- Processor Parameters
+    xmlValueBuilder(glob, "LCIOInputFiles", inputFiles, xmlParList=parList)
+    # --- Max number of evts to process
+    xmlValueBuilder(glob, "MaxRecordNumber", str(config.maxEvt), xmlParList=parList)
+    # --- Number of evts to skip
+    xmlValueBuilder(glob, "SkipNEvents", str(config.nSkipEvt), xmlParList=parList)
+    # --- Verbosity
+    xmlValueBuilder(glob, "Verbosity", config.verbosity, option="options", optionValue="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT", xmlParList=parList)
 
-# for file in fileList:
-inputFiles ='\n'.join(fileList)
+    ## TAG: Processors
+    for proc in config.processorList:
+        processor = etree.SubElement(marlin, "processor", name=proc[0])
+        processor.set("type", proc[1])
 
-print inputFiles
+        # --- Verbosity
+        xmlValueBuilder(processor, "Verbosity", config.verbosity, parameterType="string", option="options", optionValue="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT", xmlParList=parList)
+        xmlValueBuilder(processor, "InputCollectionName", config.inputCollectionName, "string", "lcioInType", config.inputCollectionType, xmlParList=parList)
+        xmlValueBuilder(processor, "OutputCollectionName", config.outputCollectionName, "string", "lcioOutType", config.inputCollectionType, xmlParList=parList)
+        xmlValueBuilder(processor, "LCIOOutputFile", outputFile + ".slcio", "string", xmlParList=parList)
+        xmlValueBuilder(processor, "ROOTOutputFile", outputFile + ".root", "string", xmlParList=parList)
+        xmlValueBuilder(processor, "PlotFolder", config.plotPath, "string", xmlParList=parList)
+        # --- Byte shift for raw data reading
+        xmlValueBuilder(processor, "RU_SHIFT", str(config.ruShift), "int", xmlParList=parList)
+        # --- XDAQ Byte shift for raw data reading
+        xmlValueBuilder(processor, "XDAQ_SHIFT", str(config.xDaqShift), "int", xmlParList=parList)
+        xmlValueBuilder(processor, "CerenkovDifId", str(config.cerenkovDifId), "int", xmlParList=parList)
+        # --- Drop first Trigger event (bool)
+        xmlValueBuilder(processor, "DropFirstRU", str(config.dropRu), "bool", xmlParList=parList)
+        # --- Skip full Asic event (bool)
+        xmlValueBuilder(processor, "SkipFullAsic", str(config.skipFullAsic), "bool", xmlParList=parList)
+        xmlValueBuilder(processor, "Before2016Data", str(config.before2016Data), "bool", xmlParList=parList)
+        if config.before2016Data is False:
+            xmlValueBuilder(processor, "TreatEcal", str(config.treatEcal), "bool", xmlParList=parList)
+            # --- DetectorId for Ecal Data
+            xmlValueBuilder(processor, "EcalDetectorIds", str(config.EcalDetectorIds), "std::vector<int>", xmlParList=parList)
 
-outputFile = config.outputFile % (config.dataPath,runNumber) # extension slcio/root added below
+    # pretty string
+    s = etree.tostring(marlin, pretty_print=True)
+    with open(config.xmlFile, "w") as outFile:
+        outFile.write(s)
 
-# create XML 
-## TAG: Execute 
-marlin = etree.Element('marlin')
-execute = etree.SubElement(marlin,"execute")
-for proc in config.processorList:
-  processor = etree.SubElement(execute,"processor", name=proc[0])
+'''
+'''
+# -----------------------------------------------------------------------------
+def findNumberOfFiles(folder, findString):
+    nFile = 0
+    command_line = "ls %s" % folder
+    args = shlex.split(command_line)
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout_list = proc.communicate()[0].split('\n')
+    for line in stdout_list:
+        if findString in line:
+            nFile += 1
+    if nFile == 0:
+        print ("\n[Streamout.py] - File Not found, available files: ")
+        for line in stdout_list:
+            print ("\t%s" % line)
+    return nFile
+    
+    
+'''
+'''
+# -----------------------------------------------------------------------------
+def listFiles(fileNumber, runNumber):
+    fileList = []
+    for iFile in range(0, fileNumber):
+        fileList.append(config.inputFile % (config.inputPath, runNumber, iFile))
 
-## TAG: Global 
-glob = etree.SubElement(marlin,"global")
-paramLCIO = etree.SubElement(glob,"parameter", name="LCIOInputFiles")
-paramLCIO.text = inputFiles
-# -- Processor Parameters
-# --- Max number of evts to process
-paramMaxEvt = etree.SubElement(glob,"parameter", name="MaxRecordNumber")
-paramMaxEvt.set("value",str(config.maxEvt))
-# --- Number of evts to skip
-paramSkipEvt = etree.SubElement(glob,"parameter", name="SkipNEvents")
-paramSkipEvt.set("value",str(config.nSkipEvt))
-# --- Verbosity
-paramVerbosity = etree.SubElement(glob,"parameter", name="Verbosity")
-paramVerbosity.set("options","DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT")
-paramVerbosity.text = config.verbosity
+    inFiles = '\n'.join(fileList)
+    print ('[Streamout.py] - Found %d raw slcio files for run %d : \n%s' % (fileNumber, runNumber, inFiles))
+    return inFiles
 
-## TAG: Processors
-for proc in config.processorList:
-  processor = etree.SubElement(marlin,"processor",name=proc[0])
-  processor.set("type",proc[1])
+'''
+'''
+# -----------------------------------------------------------------------------
+def elapsedTime(startTime):
+    t_sec = round(time.time() - startTime)
+    (t_min, t_sec) = divmod(t_sec, 60)
+    (t_hour, t_min) = divmod(t_min, 60) 
+    print('Time passed: {:.0f} hour {:.0f} min {:.0f} sec'.format(t_hour, t_min, t_sec))
+    
+    
+def main():
+    runNumber = 0
+    configFile = "config_streamout"
 
-  # --- Verbosity
-  paramVerbosity = etree.SubElement(processor,"parameter", name="Verbosity")
-  paramVerbosity.set("type","string")
-  paramVerbosity.set("options","DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT")
-  paramVerbosity.text = config.verbosity
-  
-  # --- InputCollection
-  paramInput = etree.SubElement(processor,"parameter", name="InputCollectionName")
-  paramInput.set("type","string")
-  paramInput.set("lcioInType",config.inputCollectionType)
-  paramInput.set("value",config.inputCollectionName)
-  
-  # --- OutputCollection
-  paramOutput = etree.SubElement(processor,"parameter", name="OutputCollectionName")
-  paramOutput.set("type","string")
-  paramOutput.set("lcioOutType",config.outputCollectionType)
-  paramOutput.set("value",config.outputCollectionName)
-  
-  # --- LCIO OutputFile
-  outFile = etree.SubElement(processor,"parameter", name="LCIOOutputFile")
-  outFile.set("type","string")
-  outFile.set("value",outputFile + ".slcio")
-  
-  # --- ROOT OutputFile
-  if config.exportROOT:
-   outRootFile = etree.SubElement(processor,"parameter", name="ROOTOutputFile")
-   outRootFile.set("type","string")
-   outRootFile.set("value",outputFile + ".root")
-   
-  # --- Byte shift for raw data reading
-  ruParam = etree.SubElement(processor,"parameter", name="RU_SHIFT")
-  ruParam.set("type","int")
-  ruParam.set("value",str(config.ruShift))
-  
-  # --- XDAQ Byte shift for raw data reading-
-  xdaqParam = etree.SubElement(processor,"parameter", name="XDAQ_SHIFT")
-  xdaqParam.set("type","int")
-  xdaqParam.set("value",str(config.xDaqShift))
-  
-  # --- Cerenkov DIF_Id
-  cerenkovIdParam = etree.SubElement(processor,"parameter", name="CerenkovDifId")
-  cerenkovIdParam.set("type","int")
-  cerenkovIdParam.set("value",str(config.cerenkovDifId))
-  
-  # --- Drop first Trigger event (bool)
-  dropRuParam = etree.SubElement(processor,"parameter", name="DropFirstRU")
-  dropRuParam.set("type","bool")
-  dropRuParam.set("value",str(config.dropRu))
-  
-  # --- Skip full Asic event (bool)
-  dropRuParam = etree.SubElement(processor,"parameter", name="SkipFullAsic")
-  dropRuParam.set("type","bool")
-  dropRuParam.set("value",str(config.skipFullAsic))
-  
-# execute.append(etree.Element('execute'))
-# marlin.append(execute)
-# # another execute with text
-# execute = etree.Element('execute')
-# execute.text = 'some text'
+    runListArg = None
+    # --- Parse CLI arguments
+    if len(sys.argv) > 1:
+        # --- Load configuration File
+        configFile = sys.argv[1]
+        try:
+            exec("import %s as config" % configFile)
+        except (ImportError, SyntaxError):
+            print ("[Streamout.py] - Cannot import config file '%s'" % configFile)
+            return
+        # --- /Load configuration File
+        if len(sys.argv) > 2:
+            # --- Load runList
+            runListArg = sys.argv[2]
+            if len(sys.argv) > 3:
+                # --- Load number of streamoutFile to process   
+                fileNum = int(sys.argv[3])
+    else:
+        print ("Please give : configFile - runNumber(s)(optional if set up in configFile) - Number of streamout file to process(optional)")
+        return   
+    # --- /Parse CLI arguments
+        
+        
+    # --- Load List of runs
+    if runListArg is None: # if no runs on CLI, load list from configFile
+        try:
+            runList = config.runList
+        except AttributeError:
+            print ("[Streamout.py] - No runs specified at command line or in configFile...exiting")
+            return
+    else:
+        runList = runListArg.split(',')
+    # --- /Load List of runs
+        
+        
+    
+    for run in runList:
+        runNumber = int(run)
+        #   List number of files to streamout (raw data are split in 2Go files with
+        #   format DHCAL_runNumber_I0_fileNumber.slcio )
+        stringToFind = 'DHCAL_%d_I0_' % runNumber
+        print ('\n\n[Streamout.py] - Looking for files to streamout for run \'%d\' in \'%s\'... ' % (runNumber, config.inputPath), end="")
+        fileNumber = findNumberOfFiles(config.inputPath, stringToFind)
+        if fileNumber == 0:
+            return
+        print ('OK')
+            
+        if len(sys.argv) > 3:
+            fileNum = int(sys.argv[3])
+            if fileNum != fileNumber:
+                print ('\n\t [Streamout.py] - *** WARNING! *** Found %d files for run %d, you asked to process only %d\n' % (fileNumber, runNumber, fileNum))
+                fileNumber = fileNum
 
-# pretty string
-s = etree.tostring(marlin, pretty_print=True)
-with open (config.processorPath+config.xmlFile,"w") as file:
-  file.write(s)
+            
+        inputFiles = listFiles(fileNumber, runNumber)
+        outputFile = config.outputFile % (config.outputPath, runNumber) # extension slcio/root added in the xml generator
+        print ("[Streamout.py] - output file : %s.slcio" % outputFile)
+        print ("[Streamout.py] - MARLIN_DLL: %s" % (config.marlinLib))
 
-subprocess.Popen(["Marlin",config.processorPath+config.xmlFile], env=dict(os.environ, MARLIN_DLL=config.processorPath+config.marlinLib))
-# subprocess.Popen(["rm",config.processorPath+config.xmlFile])
+        xmlParameterList = {}
+        generateXML(inputFiles, outputFile, xmlParameterList)
+        
+        print("\n[Streamout.py] ========================")
+        print("[Streamout.py] --- Dumping xml parameters: ")
+        for par in xmlParameterList:
+            print ("[Streamout.py] \t\t%s:\t%s" % (par, xmlParameterList[par]))
+        print("[Streamout.py] ========================\n")
+         
+        log = open(config.logFile % (config.logPath, runNumber), "w", 1) # line-buffered
+        print("\n[Streamout.py] ========================")
+        print ('[Streamout.py] --- Running Marlin...')
+        print ('[Streamout.py] --- Ouput is logged to \'%s\'' % log)
+        beginTime = time.time()
+        subprocess.call(["Marlin", config.xmlFile], env=dict(os.environ, MARLIN_DLL=config.marlinLib, MARLINDEBUG="1"), stdout=log)
+        print ('[Streamout.py] - Running Marlin...OK, - ', end='')
+        elapsedTime(beginTime)
+        print("[Streamout.py] ========================\n")
+        
+        print ('[Streamout.py] - Removing xmlFile...', end='')
+        subprocess.Popen(["rm", config.xmlFile])
+        print ("OK")
+        
+        
+if  __name__ == '__main__':
+    main()        

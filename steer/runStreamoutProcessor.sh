@@ -35,18 +35,10 @@ cat > LCIO.xml <<EOF
   <!--parameter name="RandomSeed" value="1234567890" /-->
  </global>
  <processor name="StreamoutProcessor" type="StreamoutProcessor">
-    <!--Name of the input collection-->
     <parameter name="InputCollectionName" type="string" lcioInType="LCGenericObject"> RU_XDAQ </parameter>
-    <!--Name of the output collection-->
     <parameter name="OutputCollectionName" type="string" lcioInType="RawCalorimetHit"> DHCALRawHits </parameter>
-    <!--Dif Id for Cerenkov-->
     <parameter name="CerenkovDifId" type="int"> 3 </parameter>
-    <!--Name of the slcio output file-->
     <parameter name="LCIOOutputFile" type="string" > ${outputFile}.slcio </parameter>
-    <!--Name of the root output file-->
-    <!--parameter name="rootFileName" type="string" > ${outputFile}.root </parameter-->
-    <!--Number of steps to loop over theta values-->
-    <parameter name="Hough::NThetas" type="int"> 50 </parameter>
  </processor>
 </marlin>
 EOF
