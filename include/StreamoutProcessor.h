@@ -40,14 +40,14 @@ public:
 
   ~LCStreamoutWriter()
   {
-    std::cout << "\tNumber of reconstructed events : " << m_nProcessedEvent << std::endl;
+    streamlog_out( MESSAGE ) << "\tNumber of reconstructed events : " << m_nProcessedEvent << std::endl;
     m_pLCWriter->close();
     delete m_pLCWriter;
   }
 
   void processReconstructedEvent(EVENT::LCEvent *pLCEvent)
   {
-    std::cout << " Writing rec event no " << pLCEvent->getEventNumber() << " to disk" << std::endl;
+    streamlog_out( MESSAGE ) <<  " Writing rec event no " << pLCEvent->getEventNumber() << " to disk" << std::endl;
 
     // UTIL::LCTOOLS::dumpEvent(pLCEvent);
 
@@ -137,6 +137,9 @@ private:
   int                m_xdaqShift;
   bool               m_dropFirstRU;
   bool               m_skipFullAsics;
+  bool               m_isBefore2016Data;
+  bool               m_shouldTreatEcal;
+  std::vector<int>   m_ecalDetectorIds;
   std::string        m_processorDescription;
   std::string        m_inputCollectionName;
   std::string        m_outputCollectionName;

@@ -105,27 +105,26 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
   //        "File name for the root output",
   //        outputRootName,
   //        std::string("toto.root") );
+  m_isBefore2016Data = false;
+  registerProcessorParameter("Before2016Data",
+                             "Header of raw data was modified in 2016 to account for combined test beam",
+                             m_isBefore2016Data,
+                             m_isBefore2016Data);
+
+  m_shouldTreatEcal = false;
+  registerProcessorParameter("TreatEcal",
+                             "Treat Ecal data (bool)",
+                             m_shouldTreatEcal,
+                             m_shouldTreatEcal);
+
+  std::vector<int> ecalDetectorIds = {201, 1100}; // June 2016 Combined Test Beam
+  registerProcessorParameter("EcalDetectorIds",
+                             "DetectorId for Ecal Data",
+                             m_ecalDetectorIds,
+                             ecalDetectorIds);
+
 }
 
-//-------------------------------------------------------------------------------------------------
-// void StreamoutProcessor::InitParameters()
-// {
-/*------------algorithm::Cluster------------*/
-// registerProcessorParameter( "Streamout::PrintDebug" ,
-//              "If true, processor will print some debug information",
-//              m_EfficiencyParameterSetting.printDebug,
-//              (bool) false );
-
-// m_EfficiencyParameterSetting.trackingParams=m_TrackingParameterSetting;
-
-//   std::vector<float> vec,cev;
-//   vec.push_back(-500.0);
-//   vec.push_back(500.0);
-//   registerProcessorParameter( "Layer::DetectorTransversalSize" ,
-//                "Define the detector transversal size used by efficiency algorithm (vector size must be 2 or 4; if 2 -> first value is min, second value is max; if 4 -> two first values define x edges , two last values define y edges) ",
-//                cev,
-//                vec );
-// }
 
 //-------------------------------------------------------------------------------------------------
 void StreamoutProcessor::init()
@@ -151,55 +150,12 @@ void StreamoutProcessor::init()
   m_pLCStreamoutWriter = new LCStreamoutWriter(m_outputFileName);
 
 
-
-  // rootFile = new TFile(outputRootName.c_str(),"RECREATE");
-
-  // tree = (TTree*)rootFfile->Get("tree");
-  // if(!tree){
-  //   streamlog_out(  << "tree creation" << std::endl;
-  //   tree = new TTree("tree","Shower variables");
-  // }
-  // tree->Branch("eventNum",&_nEvt);
-  // tree->Branch("eventChi2",&_eventChi2);
-  // tree->Branch("trackCosTheta",&_trackCosTheta);
-  // tree->Branch("trackX0",&_trackX0);
-  // tree->Branch("trackY0",&_trackY0);
-  // tree->Branch("trackZ0",&_trackZ0);
-  // tree->Branch("transverseRatio",&_transverseRatio);
-
-  // tree->Branch("Efficiency","std::vector<double>",&_efficiency);
-  // tree->Branch("EffEnergy","std::vector<double>",&_effEnergy);
-  // tree->Branch("Multiplicity","std::vector<double>",&_multiplicity);
-  // tree->Branch("Chi2","std::vector<double>",&_chi2);
-
   m_nRun = 0 ;
   m_nEvt = 0 ;
-
-  /*--------------------Algorithms initialisation--------------------*/
-  // algo_Cluster=new algorithm::Cluster();
-  // algo_Cluster->SetClusterParameterSetting(m_ClusterParameterSetting);
-
-  // algo_ClusteringHelper=new algorithm::ClusteringHelper();
-  // algo_ClusteringHelper->SetClusteringHelperParameterSetting(m_ClusteringHelperParameterSetting);
-
-  // algo_Tracking=new algorithm::Tracking();
-  // algo_Tracking->SetTrackingParameterSetting(m_TrackingParameterSetting);
-
-  // algo_InteractionFinder=new algorithm::InteractionFinder();
-  // algo_InteractionFinder->SetInteractionFinderParameterSetting(m_InteractionFinderParameterSetting);
-
-  // algo_Efficiency=new algorithm::Efficiency();
-  // algo_Efficiency->SetEfficiencyParameterSetting(m_EfficiencyParameterSetting);
-
-  // for(int i=0; i<_nActiveLayers; i++){
-  //   caloobject::CaloLayer* aLayer=new caloobject::CaloLayer(i);
-  //   aLayer->setLayerParameterSetting(m_LayerParameterSetting);
-  //   layers.push_back(aLayer);
-  // }
 }
 
 //-------------------------------------------------------------------------------------------------
-void StreamoutProcessor::processRunHeader( LCRunHeader* run)
+void StreamoutProcessor::processRunHeader( LCRunHeader* /*run*/)
 {
   m_nRun++ ;
   m_nEvt = 0;
@@ -215,9 +171,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   }
 
   m_eventNbr = pLCEvent->getEventNumber();
+
   // grab the input collection
   EVENT::LCCollection *pLCCollection = NULL;
-
   try
   {
     pLCCollection = pLCEvent->getCollection(m_inputCollectionName);
@@ -256,7 +212,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   pRawCalorimeterHitCollection->setFlag(chFlag.getFlag());
 
   // convert the input elements to DIFPtrs
-  for (unsigned int e = 0 ; e < pLCCollection->getNumberOfElements() ; e++)
+  for ( int e = 0 ; e < pLCCollection->getNumberOfElements() ; e++)
   {
     if (e == 0 && m_dropFirstRU)
       continue;
@@ -269,17 +225,41 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     // grab the generic object contents
     int *pGenericRawBuffer = &(pLCGenericObject->getIntVector()[0]);
     unsigned char *pRawBuffer = (unsigned char *)pGenericRawBuffer;
+
+    /** Check for detectorId (2016 data)   |   2015 data -> No detectorId
+      * _iptr[0] = detId                   |  _iptr[0] = timeBuffer
+      * _iptr[1] = difId                   |  _iptr[1] = evtCounter
+      * _iptr[2] = GTC (evtCounter)        |  _iptr[2] = evtCounter
+      * _iptr[3] = timeBuffer              |  _iptr[3] = evtCounter
+      * _iptr[4] = ?                       |  _iptr[4] = difId
+      * _iptr[5] = TriggerLenght ?         |  _iptr[5] = ?
+      * _iptr[6] = 256 * GTC               |  _iptr[6] = TriggerLenght ?
+      * _iptr[7] = ?                       |  _iptr[7] = 256 * GTC
+      * _iptr[8] = 256 * GTC               |  _iptr[8] = 0
+      */
+
+
+    if (false == m_isBefore2016Data && false == m_shouldTreatEcal)
+    {
+      uint32_t* _iptr = (uint32_t*) pRawBuffer;
+
+      if (find(m_ecalDetectorIds.begin(), m_ecalDetectorIds.end(), _iptr[0]) != m_ecalDetectorIds.end())
+      {
+        streamlog_out ( DEBUG0 ) << red << "Skipping ECAL data with detId '" << _iptr[0] << "'" << normal << std::endl;
+        continue;
+      }
+    }
+
     uint32_t ruSize = pLCGenericObject->getNInt() * sizeof(int32_t);
     uint32_t idStart = DIFUnpacker::getStartOfDIF(pRawBuffer, ruSize, m_xdaqShift);
 
     // create the DIF ptr
     unsigned char *pDifRawBuffer = &pRawBuffer[idStart];
     DIFPtr *pDifPtr = new DIFPtr(pDifRawBuffer, ruSize - idStart + 1);
-    uint difId = pDifPtr->getID();
+    int difId = pDifPtr->getID();
 
     int tag = 0;
-    // Cerenkov dif in 12/2014 = 1; 3 afterwards
-    if ( difId == 1 || difId == 3 )
+    if ( difId == m_cerenkovDifId )
     {
       std::vector<unsigned char*> theFrames_;
       std::vector<unsigned char*> theLines_;
@@ -298,27 +278,28 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         return;
       }
 
-      streamlog_out( DEBUG ) << " - Hit in Dif : " << pDifPtr->getID() << "\t NFrames : " <<  pDifPtr->getNumberOfFrames() << std::endl;
+      streamlog_out( DEBUG1 ) << blue << " - Hit in Dif " << pDifPtr->getID() << "\t NFrames : " <<  pDifPtr->getNumberOfFrames() << normal << std::endl;
       for (uint32_t i = 0; i < pDifPtr->getNumberOfFrames(); i++)
       {
-        streamlog_out( DEBUG ) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i) << std::endl;
+        streamlog_out( DEBUG1 ) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i) << std::endl;
         for (uint32_t j = 0; j < 64; j++)
         {
           if (pDifPtr->getFrameLevel(i, j, 0))
           {
-            streamlog_out( DEBUG )  << " - FrameLevel0 - i: " << i << " j: " << j << std::endl;
+            streamlog_out( DEBUG1 )  << " - FrameLevel0 - i: " << i << " j: " << j << std::endl;
             tag += 1;
           }
           if (pDifPtr->getFrameLevel(i, j, 1))
           {
-            streamlog_out( DEBUG )  << " - FrameLevel1 - i: " << i << " j: " << j << std::endl;
+            streamlog_out( DEBUG1 )  << " - FrameLevel1 - i: " << i << " j: " << j << std::endl;
             tag += 2;
           }
         }
       }
     }
+
     if ( 0 != tag)
-      streamlog_out( DEBUG )  << " - Tag : " << tag << std::endl;
+      streamlog_out( DEBUG1 )  << " - Tag : " << tag << std::endl;
 
 
     for (unsigned int f = 0 ; f < pDifPtr->getNumberOfFrames() ; f++)
@@ -480,42 +461,8 @@ void StreamoutProcessor::setSkipFullAsic(bool skip)
   m_skipFullAsics = skip;
 }
 
-
-//-------------------------------------------------------------------------------------------------
-// void StreamoutProcessor::clearVec()
-// {
-//   for(std::map<int,std::vector<caloobject::CaloHit*> >::iterator it=hitMap.begin(); it!=hitMap.end(); ++it)
-//     for( std::vector<caloobject::CaloHit*>::iterator jt=(it->second).begin(); jt!=(it->second).end(); ++jt)
-//       delete *(jt);
-
-//   hitMap.clear();
-//   _efficiency.clear();
-//   _effEnergy.clear();
-//   _multiplicity.clear();
-//   _chi2.clear();
-// }
-
-
-//-------------------------------------------------------------------------------------------------
-// void StreamoutProcessor::check( LCEvent * evt ) {
-//   // nothing to check here - could be used to fill checkplots in reconstruction processor
-// }
-
-
 //-------------------------------------------------------------------------------------------------
 void StreamoutProcessor::end() {
   delete m_pLCStreamoutWriter;
 
-  // delete algo_Cluster;
-  // delete algo_ClusteringHelper;
-  // delete algo_Tracking;
-  // delete algo_InteractionFinder;
-  // delete algo_Efficiency;
-
-  // for(std::vector<caloobject::CaloLayer*>::iterator it=layers.begin(); it!=layers.end(); ++it)
-  //   delete (*it);
-  // layers.clear();
-
-  // rootFile->Write();
-  // rootFile->Close();
 }
