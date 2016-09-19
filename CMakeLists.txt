@@ -57,6 +57,7 @@ ENDIF()
 # definitions to pass to the compiler
 ADD_DEFINITIONS( "-Wall -pedantic -Wunused-value -O2" )
 ADD_DEFINITIONS( "-Wno-long-long -Wreturn-type" )
+ADD_DEFINITIONS( "-std=c++11" )
 # -Werror" )
 
 # include directories
