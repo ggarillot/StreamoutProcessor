@@ -253,11 +253,21 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     uint32_t ruSize = pLCGenericObject->getNInt() * sizeof(int32_t);
     uint32_t idStart = DIFUnpacker::getStartOfDIF(pRawBuffer, ruSize, m_xdaqShift);
 
+    if (idStart != m_xdaqShift)
+    {
+      uint32_t* _iptr = (uint32_t*) pRawBuffer;
+      for (const auto & i : m_ecalDetectorIds)
+        streamlog_out ( MESSAGE ) << green << "m_ecalDetectorIds: '" << i << "'" << normal << std::endl;
+
+      streamlog_out( WARNING ) << red << " *** WARNING *** Unusual start of dif shift! idStart : " << idStart << "\t xdaqShift: " << m_xdaqShift << "\t detId: " << _iptr[0] << normal << std::endl;
+      continue;
+    }
     // create the DIF ptr
     unsigned char *pDifRawBuffer = &pRawBuffer[idStart];
     DIFPtr *pDifPtr = new DIFPtr(pDifRawBuffer, ruSize - idStart + 1);
     int difId = pDifPtr->getID();
 
+    streamlog_out( DEBUG0 ) << blue << " DIF: " << difId << " idStart: " << idStart << normal << std::endl;
     int tag = 0;
     if ( difId == m_cerenkovDifId )
     {
