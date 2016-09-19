@@ -20,6 +20,7 @@
 // -- ROOT headers
 #include <TFile.h>
 #include <TTree.h>
+#include <TH2D.h>
 
 // -- stl headers
 #include <iostream>
@@ -140,6 +141,9 @@ private:
   bool               m_isBefore2016Data;
   bool               m_shouldTreatEcal;
   std::vector<int>   m_ecalDetectorIds;
+  std::string        m_runNumber;
+  std::string        m_plotFolder;
+
   std::string        m_processorDescription;
   std::string        m_inputCollectionName;
   std::string        m_outputCollectionName;
@@ -155,6 +159,11 @@ private:
   std::string        magenta;
   std::string        white;
 
+  // ROOT
+  TFile * m_rootFile;
+  std::map<Int_t, TH2D*> m_mapHitPerDif;
+  std::map<Int_t, TH2D*> m_mapHitPerDifFull;
+  std::string m_rootFileName;
 } ;
 
 #endif  //  STREAMOUTPROCESSOR_H

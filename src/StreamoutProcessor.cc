@@ -20,6 +20,9 @@
 #include "marlin/VerbosityLevels.h"
 
 
+// -- ROOT includes
+#include <TCanvas.h>
+
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
 class LMGeneric: public IMPL::LCGenericObjectImpl
@@ -101,10 +104,6 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                              m_skipFullAsics,
                              m_skipFullAsics);
 
-  // registerProcessorParameter( "RootFileName" ,
-  //        "File name for the root output",
-  //        outputRootName,
-  //        std::string("toto.root") );
   m_isBefore2016Data = false;
   registerProcessorParameter("Before2016Data",
                              "Header of raw data was modified in 2016 to account for combined test beam",
@@ -123,8 +122,16 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                              m_ecalDetectorIds,
                              ecalDetectorIds);
 
-}
+  registerProcessorParameter( "ROOTOutputFile" ,
+                              "File name for the root output",
+                              m_rootFileName,
+                              std::string("toto.root") );
 
+  registerProcessorParameter( "PlotFolder" ,
+                              "Folder Path to save Plot",
+                              m_plotFolder,
+                              std::string("./") );
+}
 
 //-------------------------------------------------------------------------------------------------
 void StreamoutProcessor::init()
@@ -149,6 +156,7 @@ void StreamoutProcessor::init()
 
   m_pLCStreamoutWriter = new LCStreamoutWriter(m_outputFileName);
 
+  m_rootFile = new TFile(m_rootFileName.c_str(), "RECREATE");
 
   m_nRun = 0 ;
   m_nEvt = 0 ;
@@ -346,6 +354,33 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         std::bitset<6> channel(ch);
         std::bitset<3> amplitudeBitSet;
 
+
+
+        /**
+         * Fill hitMap asic vs Channel for each dif
+         */
+
+        Int_t difId = (unsigned long int)(((unsigned short)pDifPtr->getID()) & 0xFF);
+        Int_t asicId = (unsigned long int) (unsigned short) pDifPtr->getFrameAsicHeader(f);
+        Int_t chanId = (unsigned long int)(channel.to_ulong());
+
+        const auto & mapFind = m_mapHitPerDif.find(difId);
+        if (mapFind == m_mapHitPerDif.end()) {
+          std::string histoName;
+          std::stringstream oss; // osstringstream crash Marlin at some point...
+          oss << "hitMapChanAsic_Dif" << difId;
+          m_mapHitPerDif.insert(m_mapHitPerDif.end(), std::pair<int, TH2D*>(difId, new TH2D(oss.str().c_str(), oss.str().c_str(), 48, 0, 48, 64, 0, 64)));
+          m_mapHitPerDif.at(difId)->GetXaxis()->SetTitle("Asic");
+          m_mapHitPerDif.at(difId)->GetYaxis()->SetTitle("Channel");
+        }
+        
+        // streamlog_out( MESSAGE ) << yellow << "Filling trackPos for Dif '" << difId << "'..." << normal << std::endl;
+        m_mapHitPerDif.at(difId)->Fill(asicId, chanId);
+        // m_hitPerDifAsic->Fill(difId * asicId, chanId);
+        // streamlog_out( MESSAGE ) << blue << "Booking trackPos for Dif '" << difId << "'...OK" << normal << std::endl;
+
+        /* ================================= =================================*/
+
         // 8 firsts bits: DIF Id
         id0 = (unsigned long int)(((unsigned short)pDifPtr->getID()) & 0xFF);
 
@@ -475,4 +510,32 @@ void StreamoutProcessor::setSkipFullAsic(bool skip)
 void StreamoutProcessor::end() {
   delete m_pLCStreamoutWriter;
 
+  std::vector<Int_t> difList;
+  difList.push_back(18);
+  difList.push_back(87);
+  difList.push_back(63);
+  difList.push_back(80);
+  difList.push_back(182);
+  difList.push_back(105);
+
+
+  TCanvas *c1 = new TCanvas();
+  c1->SetCanvasSize(1920,1080);
+  c1->Update();
+  c1->cd();
+  c1->Divide(3,2);
+  Int_t iPad = 1;
+  for (const auto &dif:difList)
+   { 
+    c1->cd(iPad);
+    std::cout << "Drawing for dif " << dif << " in pad " << iPad << std::endl;
+    m_mapHitPerDif.at(dif)->Draw("colz");
+    ++iPad;
+   }
+   std::stringstream ss;
+   ss << m_plotFolder << "/hitMapChanAsicLayer48-50_run" << m_eventNbr << ".png";
+   c1->SaveAs(ss.str().c_str());
+
+  m_rootFile->Write();
+  m_rootFile->Close();
 }
