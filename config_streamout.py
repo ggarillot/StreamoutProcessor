@@ -10,8 +10,14 @@
 # runList = ['''732865''', 732864, 732863, 732861, 732860, 732853, '''732852'''] # use this list if no runNumber specified when running streamout.py
 
 
-# runPeriod = "SPS_06_2016"
-runPeriod = "SPS_Dec2014"
+    726371 726370 726369 726368 726362 726360 726357 726356 726354 726345 726344 726339 726338 726337 726335 726328 726310 726307 726306 726305 
+'''
+
+# runPeriod = "SPS_12_2014"
+# runPeriod = "SPS_04_2015"
+# runPeriod = "PS_06_2015"
+# runPeriod = "SPS_10_2015"
+runPeriod = "SPS_06_2016"
 
 # dataPath = "/Users/antoine/CALICE/DataAnalysis/data"
 dataPath = "/Volumes/PagosDisk/CALICE/data/%s" % runPeriod
@@ -23,7 +29,7 @@ logPath = "%s/Logs" % dataPath
 logFile = "%s/streamLog_%s" # % (logPath, runNumber)
 
 inputFile = "%s/DHCAL_%d_I0_%d.slcio" # % (intputPath, runNumber, streamoutFileNumber)
-outputFile = "%s/DHCAL_%d_SOTEST" # extension slcio/root added in xml # % (outputPath,runNumber)
+outputFile = "%s/DHCAL_%d_SO" # extension slcio/root added in xml # % (outputPath,runNumber)
 
 
 
@@ -45,7 +51,7 @@ outputCollectionName = "DHCALRawHits"
 
 exportROOT = True # Write to root file (Not implemented yet)
 
-maxEvt = 2 # Max Number of event to process
+maxEvt = 0 # Max Number of event to process
 nSkipEvt = 0 # Number of event to skip
 
 ruShift = 23 # Not used?
@@ -62,7 +68,7 @@ elif runPeriod.find("2014") != -1 or runPeriod.find("2015") != -1:
     xDaqShift = 24 # 2014-2015
     cerenkovDifId = 1 # Dec2014
     before2016Data = True # Bool for Ecal data detection
-    
+
 elif runPeriod.find("2016") != -1:
     xDaqShift = 20 # Since June2016
     cerenkovDifId = 3 # Since May2015

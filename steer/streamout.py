@@ -12,7 +12,8 @@ import subprocess
 import shlex # split properly command line for Popen
 from lxml import etree
 
-# Import default config file, not needed here just for dumb editor not to complain about config not existing
+# Import default config file
+# Not needed here just for dumb editor not to complain about config not existing
 import config_streamout as config
 
 
@@ -28,7 +29,7 @@ def xmlValueBuilder(rootHandle, xmlHandleName, value, parameterType=None, option
     xmlHandle.text = value
     xmlParList[xmlHandleName] = [value]
 
-    
+
 '''
 '''
 # -----------------------------------------------------------------------------
@@ -42,7 +43,7 @@ def generateXML(inputFiles, outputFile, parList):
 
     ## TAG: Global
     glob = etree.SubElement(marlin, "global")
-    
+
     # -- Processor Parameters
     xmlValueBuilder(glob, "LCIOInputFiles", inputFiles, xmlParList=parList)
     # --- Max number of evts to process
@@ -101,8 +102,8 @@ def findNumberOfFiles(folder, findString):
         for line in stdout_list:
             print ("\t%s" % line)
     return nFile
-    
-    
+
+
 '''
 '''
 # -----------------------------------------------------------------------------
@@ -121,10 +122,44 @@ def listFiles(fileNumber, runNumber):
 def elapsedTime(startTime):
     t_sec = round(time.time() - startTime)
     (t_min, t_sec) = divmod(t_sec, 60)
-    (t_hour, t_min) = divmod(t_min, 60) 
+    (t_hour, t_min) = divmod(t_min, 60)
     print('Time passed: {:.0f} hour {:.0f} min {:.0f} sec'.format(t_hour, t_min, t_sec))
-    
-    
+
+
+
+'''
+'''
+# -----------------------------------------------------------------------------
+def checkPeriod(runNumber, runPeriod, configFile):
+    if runNumber < '726177' and (runPeriod != 'SPS_08_2012' or runPeriod != 'SPS_11_2012'):
+        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_08_2012' or 'SPS_11_2012', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
+        sys.exit(0)
+
+    if runNumber >= '726177' and runNumber <= '726414' and runPeriod != 'SPS_12_2014':
+        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_12_2014', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
+        sys.exit(0)
+
+    if runNumber >= '727760' and runNumber <= '728456' and runPeriod != 'SPS_04_2015':
+        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_04_2015', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
+        sys.exit(0)
+
+    if runNumber >= '728501' and runNumber <= '728682' and runPeriod != 'PS_06_2015':
+        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'PS_06_2015', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
+        sys.exit(0)
+
+    if runNumber >= '730436' and runNumber <= '730926' and runPeriod != 'SPS_10_2015':
+        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_10_2015', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
+        sys.exit(0)
+
+    if runNumber >= '730927' and runPeriod != 'SPS_06_2016':
+        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'UNKNOWN', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
+        sys.exit(0)
+
+
+'''
+'''
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 def main():
     runNumber = 0
     configFile = "config_streamout"
@@ -144,14 +179,14 @@ def main():
             # --- Load runList
             runListArg = sys.argv[2]
             if len(sys.argv) > 3:
-                # --- Load number of streamoutFile to process   
+                # --- Load number of streamoutFile to process
                 fileNum = int(sys.argv[3])
     else:
         print ("Please give : configFile - runNumber(s)(optional if set up in configFile) - Number of streamout file to process(optional)")
         return   
     # --- /Parse CLI arguments
-        
-        
+
+
     # --- Load List of runs
     if runListArg is None: # if no runs on CLI, load list from configFile
         try:
@@ -162,10 +197,11 @@ def main():
     else:
         runList = runListArg.split(',')
     # --- /Load List of runs
-        
-        
-    
+
+
+
     for run in runList:
+        checkPeriod(run, config.runPeriod, configFile)
         runNumber = int(run)
         #   List number of files to streamout (raw data are split in 2Go files with
         #   format DHCAL_runNumber_I0_fileNumber.slcio )
@@ -175,28 +211,32 @@ def main():
         if fileNumber == 0:
             return
         print ('OK')
-            
+
         if len(sys.argv) > 3:
             fileNum = int(sys.argv[3])
             if fileNum != fileNumber:
                 print ('\n\t [Streamout.py] - *** WARNING! *** Found %d files for run %d, you asked to process only %d\n' % (fileNumber, runNumber, fileNum))
                 fileNumber = fileNum
 
-            
+
         inputFiles = listFiles(fileNumber, runNumber)
         outputFile = config.outputFile % (config.outputPath, runNumber) # extension slcio/root added in the xml generator
         print ("[Streamout.py] - output file : %s.slcio" % outputFile)
         print ("[Streamout.py] - MARLIN_DLL: %s" % (config.marlinLib))
 
+        if os.path.exists("%s.slcio" % outputFile) is True:
+            print ("[Streamout.py] - OutputFile already present...exiting")
+            return
+                    
         xmlParameterList = {}
         generateXML(inputFiles, outputFile, xmlParameterList)
-        
+
         print("\n[Streamout.py] ========================")
         print("[Streamout.py] --- Dumping xml parameters: ")
         for par in xmlParameterList:
             print ("[Streamout.py] \t\t%s:\t%s" % (par, xmlParameterList[par]))
         print("[Streamout.py] ========================\n")
-         
+
         log = open(config.logFile % (config.logPath, runNumber), "w", 1) # line-buffered
         print("\n[Streamout.py] ========================")
         print ('[Streamout.py] --- Running Marlin...')
@@ -206,11 +246,14 @@ def main():
         print ('[Streamout.py] - Running Marlin...OK, - ', end='')
         elapsedTime(beginTime)
         print("[Streamout.py] ========================\n")
-        
+
         print ('[Streamout.py] - Removing xmlFile...', end='')
         subprocess.Popen(["rm", config.xmlFile])
         print ("OK")
-        
-        
+
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 if  __name__ == '__main__':
-    main()        
+    main()

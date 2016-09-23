@@ -179,6 +179,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   }
 
   m_eventNbr = pLCEvent->getEventNumber();
+  m_runNumber = static_cast<int>(pLCEvent->getRunNumber());
 
   // grab the input collection
   EVENT::LCCollection *pLCCollection = NULL;
@@ -444,6 +445,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   pOutLCEvent->setDetectorName (pLCEvent->getDetectorName());
   pOutLCEvent->setTimeStamp (pLCEvent->getTimeStamp());
   pOutLCEvent->setWeight (pLCEvent->getWeight());
+  m_runNumber = int(pLCEvent->getRunNumber());
   try
   {
     pOutLCEvent->addCollection(pRawCalorimeterHitCollection, m_outputCollectionName);
@@ -533,7 +535,7 @@ void StreamoutProcessor::end() {
     ++iPad;
    }
    std::stringstream ss;
-   ss << m_plotFolder << "/hitMapChanAsicLayer48-50_run" << m_eventNbr << ".png";
+   ss << m_plotFolder << "/hitMapChanAsicLayer48-50_run" << m_runNumber << ".png";
    c1->SaveAs(ss.str().c_str());
 
   m_rootFile->Write();
