@@ -1,16 +1,9 @@
-
-
-
 // -- streamoutProcessor
 #include "StreamoutProcessor.h"
 #include "DIFUnpacker.h"
 #include "DIF.h"
 
 // -- lcio header
-// #include <EVENT/LCCollection.h>
-// #include <EVENT/MCParticle.h>
-// #include <EVENT/LCParameters.h>
-// #include <UTIL/CellIDDecoder.h>
 #include "IMPL/RawCalorimeterHitImpl.h"
 #include "IMPL/LCCollectionVec.h"
 #include "IMPL/LCEventImpl.h"
@@ -23,6 +16,7 @@
 // -- ROOT includes
 #include <TCanvas.h>
 
+#define DEBUGLOG    0
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
 class LMGeneric: public IMPL::LCGenericObjectImpl
@@ -73,13 +67,6 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                              m_outputFileName,
                              m_outputFileName);
 
-  m_cerenkovDifId = 3;
-  registerProcessorParameter("CerenkovDifId",
-                             "DifID number for the Cerenkov signal",
-                             m_cerenkovDifId,
-                             m_cerenkovDifId);
-
-
   m_ruShift = 23;
   registerProcessorParameter("RU_SHIFT",
                              "Byte shift for raw data reading",
@@ -122,22 +109,52 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                              m_ecalDetectorIds,
                              ecalDetectorIds);
 
-  registerProcessorParameter( "ROOTOutputFile" ,
-                              "File name for the root output",
-                              m_rootFileName,
-                              std::string("toto.root") );
+  m_cerenkovDifId = 3;
+  registerProcessorParameter("CerenkovDifId",
+                             "DifID number for the Cerenkov signal",
+                             m_cerenkovDifId,
+                             m_cerenkovDifId);
 
-  m_drawPlots = false;
-  registerProcessorParameter( "DrawPlots" ,
-                              "Bool to draw rootPlots",
-                              m_drawPlots,
-                              m_drawPlots );
+  // Cerenkov data format in RawCaloHit
+  m_cerenkovOutDifId = 3;
+  registerProcessorParameter("CerenkovOutDifId",
+                             "DifID number for the Cerenkov signal after reconstruction",
+                             m_cerenkovOutDifId,
+                             m_cerenkovOutDifId);
 
-  registerProcessorParameter( "PlotFolder" ,
-                              "Folder Path to save Plot",
-                              m_plotFolder,
-                              std::string("./") );
+  m_cerenkovOutAsicId = 1;
+  registerProcessorParameter("CerenkovOutAsicId",
+                             "AsicID number for the Cerenkov signal after reconstruction",
+                             m_cerenkovOutAsicId,
+                             m_cerenkovOutAsicId);
+
+// TODO: Not changing TimeDelay for now... ( Cannot just force the time of the hit : Need to shift the time for each cerenkov hit otherwise we won't be able to remove noise hit that arrives at different time)
+  m_cerenkovOutTimeDelay = 6;
+  registerProcessorParameter("CerenkovOutTimeDelay",
+                             "Time delay between physics event and cerenkov signal",
+                             m_cerenkovOutTimeDelay,
+                             m_cerenkovOutTimeDelay);
+
+// TODO: IF Cer1+Cer2 within a few clocks -> Add only one hit with Threshold = 3
+
+
+  // registerProcessorParameter("ROOTOutputFile",
+  //                            "File name for the root output",
+  //                            m_rootFileName,
+  //                            std::string("toto.root"));
+
+  // m_drawPlots = false;
+  // registerProcessorParameter("DrawPlots",
+  //                            "Bool to draw rootPlots",
+  //                            m_drawPlots,
+  //                            m_drawPlots);
+  //
+  // registerProcessorParameter("PlotFolder",
+  //                            "Folder Path to save Plot",
+  //                            m_plotFolder,
+  //                            std::string("./"));
 }
+
 
 //-------------------------------------------------------------------------------------------------
 void StreamoutProcessor::init()
@@ -212,8 +229,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     return;
   }
 
-  int numElements = pLCCollection->getNumberOfElements();// hit number
-  streamlog_out( DEBUG ) << " numElements in colleciton '" << m_inputCollectionName << "' : " << numElements << std::endl;
+  int numElements = pLCCollection->getNumberOfElements(); // hit number
+  streamlog_out( DEBUG ) << " Number of hits in collection '" << m_inputCollectionName << "' : " << numElements << std::endl;
+
   // create the output collection
   IMPL::LCCollectionVec *pRawCalorimeterHitCollection = new IMPL::LCCollectionVec(EVENT::LCIO::RAWCALORIMETERHIT);
 
@@ -242,10 +260,10 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     unsigned char *pRawBuffer = (unsigned char *)pGenericRawBuffer;
 
     /** Check for detectorId (2016 data)   |   2015 data -> No detectorId
-      * _iptr[0] = detId                   |  _iptr[0] = timeBuffer
-      * _iptr[1] = difId                   |  _iptr[1] = evtCounter
-      * _iptr[2] = GTC (evtCounter)        |  _iptr[2] = evtCounter
-      * _iptr[3] = timeBuffer              |  _iptr[3] = evtCounter
+     * _iptr[0] = detId  (int32_t)        |  _iptr[0] = timeBuffer
+     * _iptr[1] = difId  (int32_t)        |  _iptr[1] = evtCounter
+     * _iptr[2] = GTC (evtId) (int32_t)   |  _iptr[2] = evtCounter
+     * _iptr[3] = timeBuffer=bxId(int64_t)|  _iptr[3] = evtCounter
       * _iptr[4] = ?                       |  _iptr[4] = difId
       * _iptr[5] = TriggerLenght ?         |  _iptr[5] = ?
       * _iptr[6] = 256 * GTC               |  _iptr[6] = TriggerLenght ?
@@ -268,11 +286,11 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     uint32_t ruSize = pLCGenericObject->getNInt() * sizeof(int32_t);
     uint32_t idStart = DIFUnpacker::getStartOfDIF(pRawBuffer, ruSize, m_xdaqShift);
 
-    if (idStart != m_xdaqShift)
+    if (idStart != (uint32_t)m_xdaqShift)
     {
-      uint32_t* _iptr = (uint32_t*) pRawBuffer;
-      // When running in combination with ecal idstart is shifted for ecak data (id 1100) and combined data (id 201). TODO: See with Laurent
-      for (const auto & i : m_ecalDetectorIds)
+      uint32_t *_iptr = (uint32_t *)pRawBuffer;
+      // When running in combination with ecal idstart is shifted for ecal data (id 1100) and combined data (id 201). TODO: See with Laurent
+      for (const auto& i : m_ecalDetectorIds)
         streamlog_out ( MESSAGE ) << green << "m_ecalDetectorIds: '" << i << "'" << normal << std::endl;
 
       streamlog_out( WARNING ) << red << " *** WARNING *** Unusual start of dif shift! idStart : " << idStart << "\t xdaqShift: " << m_xdaqShift << "\t detId: " << _iptr[0] << normal << std::endl;
@@ -283,9 +301,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     DIFPtr *pDifPtr = new DIFPtr(pDifRawBuffer, ruSize - idStart + 1);
     int difId = pDifPtr->getID();
 
-    streamlog_out( DEBUG0 ) << blue << " DIF: " << difId << " idStart: " << idStart << normal << std::endl;
-    int tag0 = 0;
-    int tag1 = 0;
+    // streamlog_out( MESSAGE ) << blue << " DIF: " << difId << " idStart: " << idStart << normal << std::endl;
+    EVENT::IntVec cerTagFrameLevel = {0, 0}; // For the 2 frame level
+
     if ( difId == m_cerenkovDifId )
     {
       std::vector<unsigned char*> theFrames_;
@@ -293,7 +311,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
 
       theFrames_.clear();
       theLines_.clear();
-
+#if DEBUGLOG
       pDifPtr->dumpDIFInfo();
       try
       {
@@ -304,30 +322,33 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         delete pRawCalorimeterHitCollection;
         return;
       }
-
-      streamlog_out( MESSAGE ) << green << " - Hit in Bif " << pDifPtr->getID() << "\t NFrames : " <<  pDifPtr->getNumberOfFrames() << normal << std::endl;
+#endif
+      streamlog_out(MESSAGE) << green << " - Hit in Bif " << difId << "\t NFrames : " << pDifPtr->getNumberOfFrames() << normal << std::endl;
       for (uint32_t i = 0; i < pDifPtr->getNumberOfFrames(); i++)
       {
-        streamlog_out( DEBUG1 ) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i) << std::endl;
+        streamlog_out(DEBUG) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i) << std::endl;
+        streamlog_out(DEBUG) << " - FrameBCID : " << pDifPtr->getFrameBCID(i) << std::endl;
+        streamlog_out(DEBUG) << " - FrameTimeStamp : " << (unsigned long int)(pDifPtr->getFrameTimeToTrigger(i)) << std::endl;
         for (uint32_t j = 0; j < 64; j++)
         {
           if (pDifPtr->getFrameLevel(i, j, 0))
           {
-            streamlog_out( DEBUG1 )  << " - FrameLevel0 - i: " << i << " j: " << j << std::endl;
-            tag0 += 1;
+            streamlog_out(DEBUG) << " - FrameLevel0 - i: " << i << " j: " << j << std::endl;
+            ++cerTagFrameLevel[0];
           }
           if (pDifPtr->getFrameLevel(i, j, 1))
           {
-            streamlog_out( DEBUG1 )  << " - FrameLevel1 - i: " << i << " j: " << j << std::endl;
-            tag1 += 2;
+            streamlog_out(DEBUG) << " - FrameLevel1 - i: " << i << " j: " << j << std::endl;
+            ++cerTagFrameLevel[1];
           }
         }
       }
     }
 
-    if ( 0 != tag0 || 0 != tag1)
-      streamlog_out( MESSAGE )  << " - TagFrameLevel0 : " << tag0 << " / TagFrameLevel1 : " << tag1 << std::endl;
+    if ( 0 != cerTagFrameLevel[0] || 0 != cerTagFrameLevel[1])
+      streamlog_out( MESSAGE )  << " - TagFrameLevel0 : " << cerTagFrameLevel[0] << " / TagFrameLevel1 : " << cerTagFrameLevel[1] << std::endl;
 
+    pRawCalorimeterHitCollection->parameters().setValues("CerTagFrameLevel", cerTagFrameLevel);
 
     for (unsigned int f = 0 ; f < pDifPtr->getNumberOfFrames() ; f++)
     {
@@ -345,8 +366,25 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         }
 
         if (64 == touchedChannels)
+        {
+          if (difId == m_cerenkovDifId)
+          {
+            streamlog_out(ERROR) << " Removing Full asic from cerenkovDif ??? " << std::endl;
+          }
           continue;
       }
+      }
+
+      bool isSynchronised = true;
+      // TODO add synchronisation from laurent streamout?
+      // if ((std::find(seeds.begin(), seeds.end(), pDifPtr->getFrameTimeToTrigger(f)) == seeds.end()) &&
+      //     (std::find(seeds.begin(), seeds.end(), pDifPtr->getFrameTimeToTrigger(f) - 1) == seeds.end()) &&
+      //     (std::find(seeds.begin(), seeds.end(), pDifPtr->getFrameTimeToTrigger(f) + 1) == seeds.end()) &&
+      //     (std::find(seeds.begin(), seeds.end(), pDifPtr->getFrameTimeToTrigger(f) - 2) == seeds.end()) &&
+      //     (std::find(seeds.begin(), seeds.end(), pDifPtr->getFrameTimeToTrigger(f) + 2) == seeds.end()))
+      // {
+      //   isSynchronised = false;
+      // }
 
       // create the raw calorimeter hits
       for (unsigned int ch = 0 ; ch < 64 ; ch++)
@@ -369,54 +407,101 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
          * Fill hitMap asic vs Channel for each dif
          */
 
-        Int_t difId = (unsigned long int)(((unsigned short)pDifPtr->getID()) & 0xFF);
-        Int_t asicId = (unsigned long int) (unsigned short) pDifPtr->getFrameAsicHeader(f);
-        Int_t chanId = (unsigned long int)(channel.to_ulong());
+        //
+        // const auto& mapFind = m_mapHitPerDif.find(difId);
+        // if (mapFind == m_mapHitPerDif.end())
+        // {
+        //   std::string       histoName;
+        //   std::stringstream oss; // osstringstream crash Marlin at some point...
+        //   oss << "hitMapChanAsic_Dif" << difId;
+        //   m_mapHitPerDif.insert(m_mapHitPerDif.end(), std::pair<int, TH2D *>(difId, new TH2D(oss.str().c_str(), oss.str().c_str(), 48, 0, 48, 64, 0, 64)));
+        //   m_mapHitPerDif.at(difId)->GetXaxis()->SetTitle("Asic");
+        //   m_mapHitPerDif.at(difId)->GetYaxis()->SetTitle("Channel");
+        // }
 
-        const auto & mapFind = m_mapHitPerDif.find(difId);
-        if (mapFind == m_mapHitPerDif.end()) {
-          std::string histoName;
-          std::stringstream oss; // osstringstream crash Marlin at some point...
-          oss << "hitMapChanAsic_Dif" << difId;
-          m_mapHitPerDif.insert(m_mapHitPerDif.end(), std::pair<int, TH2D*>(difId, new TH2D(oss.str().c_str(), oss.str().c_str(), 48, 0, 48, 64, 0, 64)));
-          m_mapHitPerDif.at(difId)->GetXaxis()->SetTitle("Asic");
-          m_mapHitPerDif.at(difId)->GetYaxis()->SetTitle("Channel");
-        }
-        
         // streamlog_out( MESSAGE ) << yellow << "Filling trackPos for Dif '" << difId << "'..." << normal << std::endl;
-        m_mapHitPerDif.at(difId)->Fill(asicId, chanId);
+        // m_mapHitPerDif.at(difId)->Fill(asicId, chanId);
         // m_hitPerDifAsic->Fill(difId * asicId, chanId);
         // streamlog_out( MESSAGE ) << blue << "Booking trackPos for Dif '" << difId << "'...OK" << normal << std::endl;
 
         /* ================================= =================================*/
 
-        // 8 firsts bits: DIF Id
-        id0 = (unsigned long int)(((unsigned short)pDifPtr->getID()) & 0xFF);
 
+        unsigned short    difId     = pDifPtr->getID();
+        unsigned short    asicId    = pDifPtr->getFrameAsicHeader(f);
+        int               chanId    = channel.to_ulong();
+        unsigned long int frameTime = pDifPtr->getFrameBCID(f);
+        if (difId == m_cerenkovDifId)
+        {
+          difId = m_cerenkovOutDifId;
+          if (asicId != m_cerenkovOutAsicId)                       // bug in firmware when two signals are plugged in the BIF
+          {
+            streamlog_out(MESSAGE) << " BIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+            asicId = asicId & m_cerenkovOutAsicId;
+            streamlog_out(MESSAGE) << " NEWBIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+            if (asicId != m_cerenkovOutAsicId)
+            {
+              streamlog_out(ERROR) << " Found a weird asicId for Cerenkov: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+            }
+          }
+        }
+
+        // 8 firsts bits: DIF Id
+        id0 = (unsigned long int)(difId & 0xFF);
         // 8 next bits:   Asic Id
-        id0 += (unsigned long int)(((unsigned short)pDifPtr->getFrameAsicHeader(f) << 8) & 0xFF00);
+        id0 += (unsigned long int)((asicId << 8) & 0xFF00);
 
         //6 next bits:   Asic's Channel
-        id0 += (unsigned long int)((channel.to_ulong() << 16) & 0x3F0000);
+        id0 += (unsigned long int)((chanId << 16) & 0x3F0000);
 
         //(40 barrel + 24 endcap) modules to be coded here 0 for testbeam (over 6 bits)
         id0 += (unsigned long int)((barrelEndcapModule << 22) & 0xFC00000);
 
         // cell id 1
-        id1 = (unsigned long int)(pDifPtr->getFrameBCID(f));
+        id1 = (unsigned long int)(frameTime);
 
         amplitudeBitSet[0] = pDifPtr->getFrameLevel(f, ch, 0);
         amplitudeBitSet[1] = pDifPtr->getFrameLevel(f, ch, 1);
-        amplitudeBitSet[2] = true; // always synchronized ?
+        amplitudeBitSet[2] = isSynchronised;
 
         IMPL::RawCalorimeterHitImpl *pRawCalorimeterHit = new IMPL::RawCalorimeterHitImpl();
 
         pRawCalorimeterHit->setCellID0(id0);
         pRawCalorimeterHit->setCellID1(id1);
         pRawCalorimeterHit->setAmplitude(amplitudeBitSet.to_ulong());
-        pRawCalorimeterHit->setTimeStamp(timeStamp);
+        pRawCalorimeterHit->setTimeStamp(frameTime);
+
+
+        // if (f == 0){
+        //   if (pDifPtr->getID() == m_cerenkovDifId){
+        //     streamlog_out( MESSAGE )  << " - Adding CerenkovHit : " << std::endl;
+        //   }
+        //   streamlog_out( MESSAGE )  << "difId: " << pDifPtr->getID() <<
+        //     " - dif/asic/chan : " << difId << " " << asicId << " " << chanId <<
+        //     " - id0 : " << id0 << " id1 : " << id1 <<
+        //     " - ampBitSet : " << amplitudeBitSet.to_ulong() <<
+        //     " - TimeStamp : " << timeStamp << 
+        //     "\n--- True pRawCalorimeterHit value: " <<
+        //     " - id0 : " << pRawCalorimeterHit->getCellID0() << " id1 : " <<  pRawCalorimeterHit->getCellID1()  <<
+        //     " - ampBitSet : " << pRawCalorimeterHit->getAmplitude() <<
+        //     " - TimeStamp : " << pRawCalorimeterHit->getTimeStamp() <<
+        //     " - ID : " << pRawCalorimeterHit->id() <<
+        //     " -- Collection size: " << pRawCalorimeterHitCollection->getNumberOfElements()
+        //     << std::endl;
+        // }
+
 
         pRawCalorimeterHitCollection->addElement(pRawCalorimeterHit);
+        // if (pDifPtr->getID() == m_cerenkovDifId)
+        // {
+        //   streamlog_out( MESSAGE )  << " -- New Collection size: " << pRawCalorimeterHitCollection->getNumberOfElements() << std::endl;
+        //   streamlog_out( MESSAGE )  << " -- Hit ID: " << pRawCalorimeterHitCollection->getElementAt(pRawCalorimeterHitCollection->getNumberOfElements()-1)->id() << std::endl;
+        // }
+        // TODO Add Cerenkov Collection
+        // pRawCalorimeterHitCollection->addElement(pRawCalorimeterHit);
       }
     }
 
@@ -520,36 +605,38 @@ void StreamoutProcessor::setSkipFullAsic(bool skip)
 void StreamoutProcessor::end() {
   delete m_pLCStreamoutWriter;
 
-if ( m_drawPlots )
-  {
-    std::vector<Int_t> difList;
-    difList.push_back(18);
-    difList.push_back(87);
-    difList.push_back(63);
-    difList.push_back(80);
-    difList.push_back(182);
-    difList.push_back(105);
-
-
-    TCanvas *c1 = new TCanvas();
-    c1->SetCanvasSize(1920,1080);
-    c1->Update();
-    c1->cd();
-    c1->Divide(3,2);
-    Int_t iPad = 1;
-    for (const auto &dif:difList)
-     { 
-      c1->cd(iPad);
-      std::cout << "Drawing for dif " << dif << " in pad " << iPad << std::endl;
-      if (m_mapHitPerDif.size() > dif)
-        m_mapHitPerDif.at(dif)->Draw("colz");
-      ++iPad;
-     }
-     std::stringstream ss;
-     ss << m_plotFolder << "/hitMapChanAsicLayer48-50_run" << m_runNumber << ".png";
-     c1->SaveAs(ss.str().c_str());
-
-    m_rootFile->Write();
-    m_rootFile->Close();
-  }
+  // if (m_drawPlots)
+  // {
+  //   std::vector<unsigned int> difList;
+  //   difList.push_back(18);
+  //   difList.push_back(87);
+  //   difList.push_back(63);
+  //   difList.push_back(80);
+  //   difList.push_back(182);
+  //   difList.push_back(105);
+  //
+  //
+  //   TCanvas *c1 = new TCanvas();
+  //   c1->SetCanvasSize(1920, 1080);
+  //   c1->Update();
+  //   c1->cd();
+  //   c1->Divide(3, 2);
+  //   Int_t iPad = 1;
+  //   for (const auto& dif : difList)
+  //   {
+  //     c1->cd(iPad);
+  //     std::cout << "Drawing for dif " << dif << " in pad " << iPad << std::endl;
+  //     if (m_mapHitPerDif.size() > dif)
+  //     {
+  //       m_mapHitPerDif.at(dif)->Draw("colz");
+  //     }
+  //     ++iPad;
+  //   }
+  //   std::stringstream ss;
+  //   ss << m_plotFolder << "/hitMapChanAsicLayer48-50_run" << m_runNumber << ".png";
+  //   c1->SaveAs(ss.str().c_str());
+  // }
+  // m_rootFile->Write();
+  // m_rootFile->Close();
+  // delete m_rootFile;
 }

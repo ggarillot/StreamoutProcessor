@@ -135,6 +135,9 @@ protected:
 private:
   int                m_ruShift;
   int                m_cerenkovDifId;
+  int m_cerenkovOutDifId;
+  int m_cerenkovOutAsicId;
+  int m_cerenkovOutTimeDelay;
   int                m_xdaqShift;
   bool               m_dropFirstRU;
   bool               m_skipFullAsics;
