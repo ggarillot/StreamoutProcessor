@@ -236,14 +236,14 @@ if (DIFUnpacker::hasTemperature(cb,idx))
     while (i<fshift && cb[i] != DU_START_OF_FRAME)
     {
       ++i;
+      }
+      std::cout << "[DIFUnpacker::getFramePtr] - Dif " << getID(cb) << " HasTemp..." << std::endl;
+      if (cb[i] == DU_START_OF_FRAME)
+        std::cout << "[DIFUnpacker::getFramePtr] - Found start of frame with Shift " << fshift << std::endl;
+      else
+        std::cout << "[DIFUnpacker::getFramePtr] - ERROR: Did not find a start of Frame" << std::endl;
     }
-    std::cout << "Dif " << getID(cb) <<" HasTemp..." << std::endl;
-    if (cb[i] == DU_START_OF_FRAME)
-      std::cout << "\t *** Found start of frame with Shift " << fshift << std::endl;
-    else 
-      std::cout << "\t *** Did not find a start of Frame" << std::endl;
   }
-}
 
 if (DIFUnpacker::hasAnalogReadout(cb,idx))
   fshift=DIFUnpacker::getAnalogPtr(vLines,cb,fshift); // to be implemented
@@ -252,8 +252,8 @@ uint32_t fshift=idx+DU_BCID_SHIFT+3;
 #endif
 
 if (cb[fshift]!=DU_START_OF_FRAME)
-{
-  printf("\nDIF %d : This is not a start of frame shift= %d value = %02x \n",getID(cb),fshift,cb[fshift]);
+  {
+    printf("\n[DIFUnpacker::getFramePtr] - ERROR : DIF %d : This is not a start of frame shift= %d value = %02x \n", getID(cb), fshift, cb[fshift]);
 
   printf("fshift %d/%d \n",fshift,max_size);
   printf("fshift:\t");
@@ -280,18 +280,18 @@ if (cb[fshift]!=DU_START_OF_FRAME)
   }
   
   printf("\t --- cb[%d]: %02x\n",i, cb[i]);
-  printf("\n");
-  
-  std::string s = " --> Not a start of Frame"; 
-  throw s;
-  return fshift;
-}
+    printf("\n");
 
-do
-{
-  // printf("fshift %d and %d \n",fshift,max_size);
-  if (cb[fshift]==DU_END_OF_DIF)
+    std::string s = " [DIFUnpacker::getFramePtr] - ERROR: --> Not a start of Frame";
+    throw s;
     return fshift;
+  }
+
+  do
+  {
+    // printf("fshift %d and %d \n",fshift,max_size);
+  if (cb[fshift]==DU_END_OF_DIF)
+      return fshift;
 
   if (cb[fshift]==DU_START_OF_FRAME)
     fshift++;
@@ -307,15 +307,27 @@ do
   if (header == DU_END_OF_FRAME)
     return (fshift+2);
 
-  // std::cout<< "Header:" << header<<" "<<fshift<<std::endl;
-  if ((header<1 || header>48) && header!=129)
-  // if ((header<1 || header>48))
-  {
-    std::stringstream s("");
-    s<<header<<" Header problem "<<fshift<<std::endl;
-    throw  s.str();
-    return fshift;
-  }
+    // std::cout<< "Header:" << header<<" "<<fshift<<std::endl;
+    if ((header < 1 || header > 48) && ( header != 129 ) ) // Header for BIF in 2015/6 = 129 (bug in firmware) (0 in 2014?) 
+      // if ((header<1 || header>48))
+    {
+      
+      printf("fshift:\t");
+      for (uint32_t i = 0; i < 10; ++i)
+        printf(" %d ", i);
+      for (uint32_t i = 10; i < 2*fshift + 1; ++i)
+        printf("%d ", i);
+
+      printf("\nvalue:\t");
+      for (uint32_t i = 0; i < 2*fshift + 1; ++i)
+        printf("%02x ", cb[i]);
+      printf("\n");
+      
+      std::stringstream s("");
+      s << header << " [DIFUnpacker::getFramePtr] - ERROR: Header problem, fshift: " << fshift << " header: " << header << std::endl;
+      throw  s.str();
+      return fshift;
+    }
 
   vFrame.push_back(&cb[fshift]);
   fshift+=DU_FRAME_SIZE;
@@ -341,17 +353,19 @@ uint32_t DIFUnpacker::getFramePtrPrint(std::vector<unsigned char*> &vFrame,std::
 uint32_t fshift=idx+DU_LINES_SHIFT+1;
 
 if (DIFUnpacker::hasTemperature(cb,idx))
-{
-  if (cb[fshift] != DU_START_OF_FRAME)
   {
-    for (uint32_t i=0;i<DU_TDIF_SHIFT;++i)
+    fshift = idx + DU_TDIF_SHIFT + 1; // jenlev 1
+    if (cb[fshift] != DU_START_OF_FRAME)
     {
-      if (cb[i] != DU_START_OF_FRAME)
+    for (uint32_t i=0;i<DU_TDIF_SHIFT;++i)
+      {
+        if (cb[i] != DU_START_OF_FRAME)
         fshift=i;
-    } 
-      std::cout << "Dif " << getID(cb) <<" HasTemp..." << std::endl;
-      std::cout << "\t *** Found start of frame with Shift " << fshift << std::endl;
-  }}
+      }
+      std::cout << "[DIFUnpacker::getFramePtrPrint] - Dif " << getID(cb) << " HasTemp..." << std::endl;
+      std::cout << "[DIFUnpacker::getFramePtrPrint] - Found start of frame with Shift " << fshift << std::endl;
+    }
+  }
 
 if (DIFUnpacker::hasAnalogReadout(cb,idx))
   fshift=DIFUnpacker::getAnalogPtr(vLines,cb,fshift); // to be implemented
@@ -368,9 +382,9 @@ uint32_t fshift=idx+DU_BCID_SHIFT+3;
 //  printf("\n");
 //}
 if (cb[fshift]!=DU_START_OF_FRAME)
-{
-  printf("This is not a start of frame shift= %d value = %02x \n",fshift,cb[fshift]);
-  printf("fshift:\t");
+  {
+    printf("[DIFUnpacker::getFramePtrPrint] - ERROR: This is not a start of frame shift= %d value = %02x \n", fshift, cb[fshift]);
+    printf("fshift:\t");
   for (uint32_t i=0;i<10;++i)
     printf(" %d ", i);
   for (uint32_t i=10;i<fshift+1;++i)
@@ -389,38 +403,39 @@ do
 {
   printf("fshift %d/%d \n",fshift,max_size);
   if (cb[fshift]==DU_END_OF_DIF)
-  {
-    printf("%x ---> endDIF. Found %lu frames\n",cb[fshift],vFrame.size());
-    return fshift;
-  }
+    {
+      printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x ---> endDIF. Found %lu frames\n", cb[fshift], vFrame.size());
+      return fshift;
+    }
 
   if (cb[fshift]==DU_START_OF_FRAME)
-  {
-    printf("%x ---> startframe \n",cb[fshift]);
-    fshift++;
-  }
+    {
+      printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x ---> startframe \n", cb[fshift]);
+      fshift++;
+    }
   if (cb[fshift]==DU_END_OF_FRAME)
-  {
-    printf("%x  ---> endframe \n",cb[fshift]);
-    fshift++;
-    continue;
-  }
+    {
+      printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x  ---> endframe \n", cb[fshift]);
+      fshift++;
+      continue;
+    }
 
   uint32_t header =DIFUnpacker::getFrameAsicHeader(&cb[fshift]);
 
-  if (header == DU_END_OF_FRAME)
-  {
-    std::cout << " --- frame : " << vFrame.size() << std::endl;
-    return (fshift+2);
-  }
-  // std::cout << "Header:" << header<<" AsicId: " << ((header<<8)&0xFF00) << " fshift: " << fshift << std::endl;
+    if (header == DU_END_OF_FRAME)
+    {
+      std::cout << "[DIFUnpacker::getFramePtrPrint] - DEBUG : --- frame : " << vFrame.size() << std::endl;
+      return(fshift + 2);
+    }
+    std::cout << "[DIFUnpacker::getFramePtrPrint] - DEBUG : Header:" << header << " fshift: " << fshift << std::endl;
+    
   if ((header<1 || header>48 ) && header != 129)
-  {
-    std::stringstream s("\t ***");
-    s<<header<<" Header problem "<<fshift<<std::endl;
-    throw  s.str();
-    return fshift;
-  }
+    {
+      std::stringstream s("[DIFUnpacker::getFramePtrPrint] - ERROR:");
+      s << header << " Header problem " << fshift << std::endl;
+      throw  s.str();
+      return fshift;
+    }
 
   vFrame.push_back(&cb[fshift]);
   printf("frameContent : ");
@@ -440,9 +455,10 @@ do
   }
 
   if (cb[fshift]==DU_END_OF_FRAME)
-  {
-    printf("%x ---> endframe\n",cb[fshift]);
-    fshift++;
+    {
+      printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x ---> endframe\n", cb[fshift]);
+      fshift++;
+    }
   }
 }
 while (1);
