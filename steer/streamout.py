@@ -13,6 +13,7 @@ import subprocess
 import shlex # split properly command line for Popen
 from marlin import Marlin # if error importing it move streamout.py to same folder
 # from lxml import etree
+import yaml
 from ganga import *
 
 # Import default config file
@@ -323,6 +324,19 @@ def main():
         # Add gridInfo to Marlin configuration file + make Dic 
         if conf.runOnGrid is True:
             marlinRunDic[marlinCfgFile] = inputDataFileList
+            
+            with open(marlinCfgFile, 'r') as ymlfile:
+                cfg = yaml.load(ymlfile)
+            gridSection = {}
+            cfg['Grid'] = gridSection
+            gridSection['downloader'] = conf.gridDownloader
+            gridSection['uploader'] = conf.gridUploader
+            gridSection['LCG_CATALOG_TYPE'] = conf.LCG_CATALOG_TYPE
+            gridSection['LFC_HOST'] = conf.LFC_HOST
+            gridSection['inputFiles'] = conf.gridInputFiles
+            with open(marlinCfgFile, 'w') as ymlfile:
+                ymlfile.write(yaml.dump(cfg, default_flow_style=False))
+
         else: # Running locally
             log = open(conf.logFile.format(conf.logPath, runNumber), "w", 1) # line-buffered
             print("\n[{0}] ========================".format(scriptName))
