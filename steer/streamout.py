@@ -85,6 +85,9 @@ import config_streamout as config
 
 # -----------------------------------------------------------------------------
 def findNumberOfFiles(folder, findString):
+    ''' Return number of files associated with findString in folder 
+        If no file found print list of files in folder
+    '''
     nFile = 0
     command_line = "ls %s" % folder
     args = shlex.split(command_line)
@@ -94,28 +97,28 @@ def findNumberOfFiles(folder, findString):
         if findString in line:
             nFile += 1
     if nFile == 0:
-        print ("\n[Streamout.py] - File Not found, available files: ")
+        print ("\n[{0}] - File Not found, available files: ".format(os.path.basename(__file__)))
         for line in stdout_list:
-            print ("\t%s" % line)
+            print ("\t{0}".format(line))
     return nFile
 
 
-'''
-'''
 # -----------------------------------------------------------------------------
-def listFiles(fileNumber, runNumber):
+def listFiles(fileNumber, runNumber, fileName, filePath):
+    ''' Return the list of files found associated with runNumber
+    '''
     fileList = []
     for iFile in range(0, fileNumber):
-        fileList.append(config.inputFile % (config.inputPath, runNumber, iFile))
+        fileList.append(fileName % (filePath, runNumber, iFile))
 
     inFiles = '\n'.join(fileList)
-    print ('[Streamout.py] - Found %d raw slcio files for run %d : \n%s' % (fileNumber, runNumber, inFiles))
+    print ('[{0}] - Found {1} raw slcio files for run {2} : \n{3}'.format(os.path.basename(__file__), fileNumber, runNumber, inFiles))
     return inFiles
 
-'''
-'''
 # -----------------------------------------------------------------------------
 def elapsedTime(startTime):
+    ''' Print time to finish job
+    '''
     t_sec = round(time.time() - startTime)
     (t_min, t_sec) = divmod(t_sec, 60)
     (t_hour, t_min) = divmod(t_min, 60)
@@ -145,31 +148,34 @@ def checkPeriod(runNumber, runPeriod, configFile):
 
     if runNumber >= '730436' and runNumber <= '730926' and runPeriod != 'SPS_10_2015':
         print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_10_2015', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
-        sys.exit(0)
+        sys.exit(periodError('SPS_10_2015'))
 
     if runNumber >= '730927' and runPeriod != 'SPS_06_2016':
         print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'UNKNOWN', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
         sys.exit(0)
 
 
-'''
-'''
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def main():
-    runNumber = 0
-    configFile = "config_streamout"
+    '''
+    '''
+    scriptName = os.path.basename(__file__) # For logging clarity
 
+    runNumber = None
     runListArg = None
+    fileNum = None
+    configFile = "config_streamout" # Default config file if none is given on cli     
+
+
     # --- Parse CLI arguments
     if len(sys.argv) > 1:
         # --- Load configuration File
         configFile = sys.argv[1]
         try:
-            exec("import %s as config" % configFile)
+            exec("import {0} as config".format(configFile))
         except (ImportError, SyntaxError):
-            print ("[Streamout.py] - Cannot import config file '%s'" % configFile)
-            return
+            sys.exit("[{0}] - Cannot import config file '{1}'".format(scriptName, configFile))
         # --- /Load configuration File
         if len(sys.argv) > 2:
             # --- Load runList
@@ -183,13 +189,13 @@ def main():
     # --- /Parse CLI arguments
 
 
+
     # --- Load List of runs
     if runListArg is None: # if no runs on CLI, load list from configFile
         try:
             runList = config.runList
         except AttributeError:
-            print ("[Streamout.py] - No runs specified at command line or in configFile...exiting")
-            return
+            sys.exit("[{0}] - No runs specified at command line or in configFile...exiting".format(scriptName))
     else:
         runList = runListArg.split(',')
     # --- /Load List of runs
@@ -201,20 +207,15 @@ def main():
         runNumber = int(run)
         #   List number of files to streamout (raw data are split in 2Go files with
         #   format DHCAL_runNumber_I0_fileNumber.slcio )
-        stringToFind = 'DHCAL_%d_I0_' % runNumber
         print ('\n\n[Streamout.py] - Looking for files to streamout for run \'%d\' in \'%s\'... ' % (runNumber, config.inputPath), end="")
-        fileNumber = findNumberOfFiles(config.inputPath, stringToFind)
+        stringToFind = 'DHCAL_{0}_I0_'.format(runNumber)
         if fileNumber == 0:
             return
         print ('OK')
 
-        if len(sys.argv) > 3:
-            fileNum = int(sys.argv[3])
+        # Check if more/less files available than asked by the user
+        if fileNum is not None:
             if fileNum != fileNumber:
-                print ('\n\t [Streamout.py] - *** WARNING! *** Found %d files for run %d, you asked to process only %d\n' % (fileNumber, runNumber, fileNum))
-                fileNumber = fileNum
-
-
         inputFiles = listFiles(fileNumber, runNumber)
         outputFile = config.outputFile % (config.outputPath, runNumber) # extension slcio/root added in the xml generator
         print ("[Streamout.py] - output file : %s.slcio" % outputFile)
@@ -239,6 +240,12 @@ def main():
         print ('[Streamout.py] - Removing xmlFile...', end='')
         subprocess.Popen(["rm", config.xmlFile])
         print ("OK")
+                ans = raw_input('\n\t [{}] - *** WARNING! *** Found {} files for run {}, you asked to process {}. Proceed? (y/n)\n'.format(scriptName, fileNumber, runNumber, fileNum))
+                if ans == 'y':
+                    fileNumber = fileNum
+                else:
+                    sys.exit('Exiting')
+
 
 
 
