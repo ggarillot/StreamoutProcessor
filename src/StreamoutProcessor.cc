@@ -127,6 +127,12 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                               m_rootFileName,
                               std::string("toto.root") );
 
+  m_drawPlots = false;
+  registerProcessorParameter( "DrawPlots" ,
+                              "Bool to draw rootPlots",
+                              m_drawPlots,
+                              m_drawPlots );
+
   registerProcessorParameter( "PlotFolder" ,
                               "Folder Path to save Plot",
                               m_plotFolder,
@@ -512,32 +518,36 @@ void StreamoutProcessor::setSkipFullAsic(bool skip)
 void StreamoutProcessor::end() {
   delete m_pLCStreamoutWriter;
 
-  std::vector<Int_t> difList;
-  difList.push_back(18);
-  difList.push_back(87);
-  difList.push_back(63);
-  difList.push_back(80);
-  difList.push_back(182);
-  difList.push_back(105);
+if ( m_drawPlots )
+  {
+    std::vector<Int_t> difList;
+    difList.push_back(18);
+    difList.push_back(87);
+    difList.push_back(63);
+    difList.push_back(80);
+    difList.push_back(182);
+    difList.push_back(105);
 
 
-  TCanvas *c1 = new TCanvas();
-  c1->SetCanvasSize(1920,1080);
-  c1->Update();
-  c1->cd();
-  c1->Divide(3,2);
-  Int_t iPad = 1;
-  for (const auto &dif:difList)
-   { 
-    c1->cd(iPad);
-    std::cout << "Drawing for dif " << dif << " in pad " << iPad << std::endl;
-    m_mapHitPerDif.at(dif)->Draw("colz");
-    ++iPad;
-   }
-   std::stringstream ss;
-   ss << m_plotFolder << "/hitMapChanAsicLayer48-50_run" << m_runNumber << ".png";
-   c1->SaveAs(ss.str().c_str());
+    TCanvas *c1 = new TCanvas();
+    c1->SetCanvasSize(1920,1080);
+    c1->Update();
+    c1->cd();
+    c1->Divide(3,2);
+    Int_t iPad = 1;
+    for (const auto &dif:difList)
+     { 
+      c1->cd(iPad);
+      std::cout << "Drawing for dif " << dif << " in pad " << iPad << std::endl;
+      if (m_mapHitPerDif.size() > dif)
+        m_mapHitPerDif.at(dif)->Draw("colz");
+      ++iPad;
+     }
+     std::stringstream ss;
+     ss << m_plotFolder << "/hitMapChanAsicLayer48-50_run" << m_runNumber << ".png";
+     c1->SaveAs(ss.str().c_str());
 
-  m_rootFile->Write();
-  m_rootFile->Close();
+    m_rootFile->Write();
+    m_rootFile->Close();
+  }
 }

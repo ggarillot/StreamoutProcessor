@@ -142,6 +142,7 @@ private:
   bool               m_shouldTreatEcal;
   std::vector<int>   m_ecalDetectorIds;
   std::string        m_runNumber;
+  bool               m_drawPlots;
   std::string        m_plotFolder;
 
   std::string        m_processorDescription;
