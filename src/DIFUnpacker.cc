@@ -229,14 +229,13 @@ uint32_t fshift=idx+DU_LINES_SHIFT+1;
 
 if (DIFUnpacker::hasTemperature(cb,idx))
 {
-  fshift=idx+DU_TDIF_SHIFT; // jenlev 1
+  fshift=idx+DU_TDIF_SHIFT + 1; // jenlev 1
   if (cb[fshift] != DU_START_OF_FRAME)
   {
     uint32_t i=0;
     while (i<fshift && cb[i] != DU_START_OF_FRAME)
     {
       ++i;
-      }
       std::cout << "[DIFUnpacker::getFramePtr] - Dif " << getID(cb) << " HasTemp..." << std::endl;
       if (cb[i] == DU_START_OF_FRAME)
         std::cout << "[DIFUnpacker::getFramePtr] - Found start of frame with Shift " << fshift << std::endl;
@@ -244,6 +243,7 @@ if (DIFUnpacker::hasTemperature(cb,idx))
         std::cout << "[DIFUnpacker::getFramePtr] - ERROR: Did not find a start of Frame" << std::endl;
     }
   }
+}
 
 if (DIFUnpacker::hasAnalogReadout(cb,idx))
   fshift=DIFUnpacker::getAnalogPtr(vLines,cb,fshift); // to be implemented
@@ -340,8 +340,7 @@ if (cb[fshift]!=DU_START_OF_FRAME)
 
   if (cb[fshift]==DU_END_OF_FRAME)
     fshift++;
-}
-while (1);
+} while (1);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -459,7 +458,6 @@ do
       printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x ---> endframe\n", cb[fshift]);
       fshift++;
     }
-  }
 }
 while (1);
 }
