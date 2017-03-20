@@ -132,29 +132,33 @@ def elapsedTime(startTime):
 
 # -----------------------------------------------------------------------------
 def checkPeriod(runNumber, runPeriod, configFile):
+    ''' Check runNumber is associated to correct runPeriod
+        Abort execution if not
+    '''
+    def periodError(goodPeriod):
+        return "[{0}] - RunNumber '{1}' is from TestBeam '{2}', you selected '{3}' in configFile '{4}'".format(os.path.basename(__file__), runNumber, goodPeriod, conf.runPeriod, configFile)
+    
     if runNumber < '726177' and (runPeriod != 'SPS_08_2012' or runPeriod != 'SPS_11_2012'):
-        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_08_2012' or 'SPS_11_2012', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
-        sys.exit(0)
+        sys.exit(periodError('SPS_08_2012 or SPS_11_2012'))
 
     if runNumber >= '726177' and runNumber <= '726414' and runPeriod != 'SPS_12_2014':
-        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_12_2014', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
-        sys.exit(0)
+        sys.exit(periodError('SPS_12_2014'))
 
     if runNumber >= '727760' and runNumber <= '728456' and runPeriod != 'SPS_04_2015':
-        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_04_2015', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
-        sys.exit(0)
+        sys.exit(periodError('SPS_04_2015'))
 
     if runNumber >= '728501' and runNumber <= '728682' and runPeriod != 'PS_06_2015':
-        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'PS_06_2015', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
-        sys.exit(0)
+        sys.exit(periodError('PS_06_2015'))
 
     if runNumber >= '730436' and runNumber <= '730926' and runPeriod != 'SPS_10_2015':
-        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'SPS_10_2015', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
         sys.exit(periodError('SPS_10_2015'))
 
-    if runNumber >= '730927' and runPeriod != 'SPS_06_2016':
-        print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'UNKNOWN', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
-        sys.exit(0)
+    if runNumber >= '730927' and runNumber <= '732909' and runPeriod != 'SPS_06_2016':
+        sys.exit(periodError('SPS_06_2016'))
+
+    if runNumber >= '734927' and runPeriod != 'SPS_10_2016':
+        sys.exit(periodError('SPS_10_2016'))
+
 # -----------------------------------------------------------------------------
 def createJob(executable, args = [], name='', backend='Local', backendCE='', voms=''):
     ''' Create Ganga job. Default backend is Local
