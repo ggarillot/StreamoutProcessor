@@ -116,11 +116,11 @@ def listFiles(fileNumber, runNumber, fileName, filePath):
     '''
     fileList = []
     for iFile in range(0, fileNumber):
-        fileList.append(fileName % (filePath, runNumber, iFile))
+        fileList.append(fileName.format(filePath, runNumber, iFile))
 
-    inFiles = '\n'.join(fileList)
-    print ('[{0}] - Found {1} raw slcio files for run {2} : \n{3}'.format(os.path.basename(__file__), fileNumber, runNumber, inFiles))
-    return inFiles
+#    inFiles = '\n'.join(fileList)
+    print ('[{0}] - Found {1} raw slcio files for run {2} : \n{3}'.format(os.path.basename(__file__), fileNumber, runNumber, fileList))
+    return fileList
 
 # -----------------------------------------------------------------------------
 def elapsedTime(startTime):
@@ -172,21 +172,21 @@ def scp(runNumber, serverName, serverPath, localPath):
 
 
 # -----------------------------------------------------------------------------
-def createJob(executable, args = [], name='', backend='Local', backendCE='', voms=''):
+def createJob(executable, args = [], name='', comment='', backend='Local', backendCE='', voms=''):
     ''' Create Ganga job. Default backend is Local
     '''
     j = Job()
     j.application = Executable(exe=File(executable), args=args)
-    j.backend = backend
+    j.name = name
+    j.comment = comment        
+
+    j.backend = backend    
     if backend == 'CREAM':
         j.backend.CE = backendCE
         try:
             gridProxy.voms = voms
         except NameError: # ganga > 6.3 no longer has the gridProxy credentials system
             j.backend.credential_requirements = VomsProxy(vo=voms)
-    if name is not None:
-        j.name = name
-        
     return j
 
 
@@ -198,6 +198,9 @@ def setCliOptions(marlin, xmlSection):
     for param, value in vars(xmlSection).items():
         if param != 'name':
             marlin.setCliOption(sectionName + param, value)
+
+
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def main():
@@ -216,7 +219,7 @@ def main():
         # --- Load configuration File
         configFile = sys.argv[1]
         try:
-            exec("import {0} as config".format(configFile))
+            exec("import {0} as conf".format(configFile))
         except (ImportError, SyntaxError):
             sys.exit("[{0}] - Cannot import config file '{1}'".format(scriptName, configFile))
         # --- /Load configuration File
@@ -251,8 +254,6 @@ def main():
 
 
     # For grid run, define a dictionary of generated configFile and associated inputFiles for each run
-    marlinRunDic = {}
-
 
     for run in runList:
         #Check if runNumber match given period in configFile
@@ -260,6 +261,7 @@ def main():
         runNumber = int(run)
         #   List number of files to streamout (raw data are split in 2Go files with
         #   format DHCAL_runNumber_I0_fileNumber.slcio )
+        #   TODO Remove Hardcoding here
         stringToFind = 'DHCAL_{0}_I0_'.format(runNumber)
         print ("[{0}] - Looking for files to streamout for run '{1}' in '{2}'... ".format(scriptName, runNumber, conf.inputPath), end="")
         if os.path.exists(conf.inputPath) is False:
@@ -287,9 +289,9 @@ def main():
                     sys.exit('Exiting')
 
         # List of inputfiles for current run, reused for grid importation
-        inputDataFileList = listFiles(fileNumber, runNumber, conf.fileName, conf.filePath)
-        conf.glob.LCIOInputFiles = inputDataFileList
-        outputFile = conf.outputFile % (conf.outputPath, runNumber)
+        inputDataFileList = (listFiles(fileNumber, runNumber, conf.inputFile, conf.inputPath))
+        conf.glob.LCIOInputFiles = ' '.join(inputDataFileList)
+        outputFile = conf.outputFile.format(conf.outputPath, runNumber)
         conf.streamoutProc.LCIOOutputFile = outputFile + ".slcio"
         conf.streamoutProc.ROOTOutputFile = outputFile + ".root"
         
@@ -322,10 +324,27 @@ def main():
         setCliOptions(marlin, conf.streamoutProc)        
         marlin.writeConfigFile(marlinCfgFile)
         
-        # Add gridInfo to Marlin configuration file + make Dic 
-        if conf.runOnGrid is True:
-            marlinRunDic[marlinCfgFile] = inputDataFileList
+        # Running locally
+        if conf.runOnGrid is False:
+            log = open(conf.logFile.format(conf.logPath, runNumber), "w", 1) # line-buffered
+            print("\n[{0}] ========================".format(scriptName))
+            print ('[{0}] --- Running Marlin...'.format(scriptName))
+            print ("[{0}] --- Ouput is logged to '{1}'".format(scriptName, log))
+            beginTime = time.time()
+            # subprocess.call(['python', 'run_marlin.py', marlinCfgFile])
+            subprocess.call(['python', 'run_marlin.py', marlinCfgFile], stdout=log, stderr=log)
+            print ('[{0}] - Running Marlin...OK - '.format(scriptName), end='')
+            try:
+                elapsedTime(beginTime)
+            except ValueError:
+                print ("Can't print time...")
+            print("[{0}] ========================\n".format(scriptName))
+
+            # print ('[{0}] - Removing xmlFile...'.format(scriptName), end='')
+            # subprocess.Popen(["rm", xmlFile])
             
+        # Add gridInfo to Marlin configuration file + make Dic 
+        else: 
             with open(marlinCfgFile, 'r') as ymlfile:
                 cfg = yaml.load(ymlfile)
             gridSection = {}
@@ -338,29 +357,24 @@ def main():
             with open(marlinCfgFile, 'w') as ymlfile:
                 ymlfile.write(yaml.dump(cfg, default_flow_style=False))
 
-        else: # Running locally
-            log = open(conf.logFile.format(conf.logPath, runNumber), "w", 1) # line-buffered
-            print("\n[{0}] ========================".format(scriptName))
-            print ('[{0}] --- Running Marlin...'.format(scriptName))
-            print ("[{0}] --- Ouput is logged to '{1}'".format(scriptName, log))
-            beginTime = time.time()
-            # subprocess.call(['python', 'run_marlin.py', marlinCfgFile])
-            subprocess.call(['python', 'run_marlin.py', marlinCfgFile], stdout=log, stderr=log)
-            print ('[{0}] - Running Marlin...OK - '.format(scriptName), end='')
-            elapsedTime(beginTime)
-            print("[{0}] ========================\n".format(scriptName))
-
-            # print ('[{0}] - Removing xmlFile...'.format(scriptName), end='')
-            # subprocess.Popen(["rm", xmlFile])
-
-    if conf.runOnGrid is True:
-        args = [[str(cfgFile)] for cfgFile in marlinRunDic.keys()]
-        print("Args:\n")
-        print (args)
-
+###
         try:
             print ("[{0}] --- Submiting Job ... ".format(scriptName))
-            
+            # Navigate jobtree, if folder doesn't exist create it
+            treePath = conf.runPeriod + '/' + scriptName[:-3] # Remove .py at end of scriptName
+            # if jobtree.exists(treePath) is False: # Always returns true...
+            jobtree.cd('/') # make sure we are in root folder
+            try :                
+                jobtree.cd(treePath) 
+            except TreeError:
+                try:
+                    jobtree.mkdir(treePath)
+                except: # mkdir should write all missing folder if any....apparently not true
+                    print("WhatThe?")
+                    jobtree.mkdir(conf.runPeriod)            
+                    jobtree.mkdir(treePath)
+                jobtree.cd(treePath)
+                
             eos_installation ='/afs/cern.ch/project/eos/installation/user/'
             eos_home='/eos/user/a/apingaul/CALICE/'
             
@@ -377,61 +391,52 @@ def main():
             print (config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
             print (config.Output.MassStorageFile['uploadOptions']['path'])
 
-            # j = createJob(executable='/usr/bin/python', args=['run_marlin.py'], backend=conf.backend)     
-            # if conf.backend == 'Local':
-                # j = createJob(executable='run_marlin.py', backend=conf.backend)
-            # else :
-            j = createJob(executable='run_marlin.py', args = [], name='test', backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
-   
-            # inFiles = []
-            # for f in conf.gridInputFiles: # configuration files,marlin lib etc.
-                # inFiles.append(LocalFile(f))
-            j.inputfiles = [LocalFile(f) for f in conf.gridInputFiles]
-            
-            #            for f in inputDataFileList: # Datafiles
-            # j.inputdata=GangaDataset(files=[MassStorageFile(f) for f in inputDataFileList])
-            
-            print ("\n["+scriptName+"] Using the following files as input:")
-            for f in j.inpuFiles:
-                print (f)
-            # j.parallel_submit = True
-            j.outputfiles = [MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{sjid}/{fname}')]
 
-            # inputFiles=[]
-            # for spe in marlinRunDic.values():
-            #     inputDataFiles=list(genericFile)
-            #     for item in spe:
-            #         l.append(item)
-            #     inputFiles.append(l)
-            # print (inputFiles)
+
             
-            s = GenericSplitter()
-            s.multi_attrs={
-                        'application.args': args,
-                        'inputfiles': args,
-                        'inputdata': marlinRunDic.values()
-                        }
-            # j.application.args = ['__GangaInputData.txt__']
-            # j.inputdata = GangaDataset( files=[ LocalFile('*.txt') ] )
-            print (s.multi_attrs)
-            j.splitter = s
-            j.info
-            print ("\n["+j.name+"] Writing the following files to EOS:")
-            print (j.outputfiles)
-            for files in j.outputfiles:
-                files.locations
-            print ("\n["+j.name+"] Now submitting the job ...")
+            inputFiles = []
+            for f in conf.gridInputFiles:
+                inputFiles.append(LocalFile(f))
+            inputFiles.append(LocalFile(marlinCfgFile))
+            print ('inputFiles:\n', inputFiles)
             
-            # get files 
-            # j.submit()
-            print ("\n["+j.name+"] ... submitting job done.\n")
+            inputData=[]
+            for item in [inputDataFileList]:
+                l = []
+                print ("\nitem=",item,"\n")
+                for f in item:
+                    l.append(MassStorageFile(f))
+                print ("\nl=",l,"\n")
+                for f in l:
+                    print ("\nf=",f,"\n")
+                
+            inputData = GangaDataset(treat_as_inputfiles=False, files=[f for f in l])
+
+            print ('\n\ninputDataType:\n', type(inputData))
+            print ('\n\ninputData:\n', inputData)
+            for item in inputData:
+                print (type(item))
+                print (item)
+            
+            j = createJob(executable='run_marlin.py', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
+            j.comment = "Streamout " + conf.runPeriod
+            j.outputfiles = [MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')]
+            j.inputfiles = inputFiles
+            j.inputdata = inputData
+
+            # Save job as txtfile locally
+            # export(jobs(j.id), 'my_job.txt')
+
+            jobtree.add(j)            
+            j.submit()
+            print ("\n[{0}] ... submitting job done.\n".format(scriptName))
 
             #queues.add(j.submit)
-
-
         except:
             print ("[{0}] --- Failed to submit job ".format(scriptName))
             raise
+###
+
 
 
 # -----------------------------------------------------------------------------
