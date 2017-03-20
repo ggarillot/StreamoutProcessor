@@ -271,6 +271,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     if (idStart != m_xdaqShift)
     {
       uint32_t* _iptr = (uint32_t*) pRawBuffer;
+      // When running in combination with ecal idstart is shifted for ecak data (id 1100) and combined data (id 201). TODO: See with Laurent
       for (const auto & i : m_ecalDetectorIds)
         streamlog_out ( MESSAGE ) << green << "m_ecalDetectorIds: '" << i << "'" << normal << std::endl;
 
@@ -283,7 +284,8 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     int difId = pDifPtr->getID();
 
     streamlog_out( DEBUG0 ) << blue << " DIF: " << difId << " idStart: " << idStart << normal << std::endl;
-    int tag = 0;
+    int tag0 = 0;
+    int tag1 = 0;
     if ( difId == m_cerenkovDifId )
     {
       std::vector<unsigned char*> theFrames_;
@@ -303,7 +305,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         return;
       }
 
-      streamlog_out( DEBUG1 ) << blue << " - Hit in Dif " << pDifPtr->getID() << "\t NFrames : " <<  pDifPtr->getNumberOfFrames() << normal << std::endl;
+      streamlog_out( MESSAGE ) << green << " - Hit in Bif " << pDifPtr->getID() << "\t NFrames : " <<  pDifPtr->getNumberOfFrames() << normal << std::endl;
       for (uint32_t i = 0; i < pDifPtr->getNumberOfFrames(); i++)
       {
         streamlog_out( DEBUG1 ) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i) << std::endl;
@@ -312,19 +314,19 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
           if (pDifPtr->getFrameLevel(i, j, 0))
           {
             streamlog_out( DEBUG1 )  << " - FrameLevel0 - i: " << i << " j: " << j << std::endl;
-            tag += 1;
+            tag0 += 1;
           }
           if (pDifPtr->getFrameLevel(i, j, 1))
           {
             streamlog_out( DEBUG1 )  << " - FrameLevel1 - i: " << i << " j: " << j << std::endl;
-            tag += 2;
+            tag1 += 2;
           }
         }
       }
     }
 
-    if ( 0 != tag)
-      streamlog_out( DEBUG1 )  << " - Tag : " << tag << std::endl;
+    if ( 0 != tag0 || 0 != tag1)
+      streamlog_out( MESSAGE )  << " - TagFrameLevel0 : " << tag0 << " / TagFrameLevel1 : " << tag1 << std::endl;
 
 
     for (unsigned int f = 0 ; f < pDifPtr->getNumberOfFrames() ; f++)
