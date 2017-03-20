@@ -1,6 +1,7 @@
 """
     Configuration module for Streamout Marlin processor
     Generate the xml file with data imported from external config file
+export PYTHONPATH=/cvmfs/ganga.cern.ch/Ganga/install/6.3.0/python:${PYTHONPATH}
 """
 
 from __future__ import print_function # import print function from py3 if running py2.x
@@ -11,6 +12,7 @@ import time
 import subprocess
 import shlex # split properly command line for Popen
 # from lxml import etree
+from ganga import *
 
 # Import default config file
 # Not needed here just for dumb editor not to complain about config not existing
@@ -126,8 +128,6 @@ def elapsedTime(startTime):
 
 
 
-'''
-'''
 # -----------------------------------------------------------------------------
 def checkPeriod(runNumber, runPeriod, configFile):
     if runNumber < '726177' and (runPeriod != 'SPS_08_2012' or runPeriod != 'SPS_11_2012'):
@@ -153,6 +153,23 @@ def checkPeriod(runNumber, runPeriod, configFile):
     if runNumber >= '730927' and runPeriod != 'SPS_06_2016':
         print ("[Streamout.py] - RunNumber '%s' is from TestBeam 'UNKNOWN', you selected '%s' in configFile '%s'" % (runNumber, config.runPeriod, configFile))
         sys.exit(0)
+# -----------------------------------------------------------------------------
+def createJob(executable, args = [], name='', backend='Local', backendCE='', voms=''):
+    ''' Create Ganga job. Default backend is Local
+    '''
+    j = Job()
+    j.application = Executable(exe=File(executable), args=args)
+    j.backend = backend
+    if backend == 'CREAM':
+        j.backend.CE = backendCE
+        try:
+            gridProxy.voms = voms
+        except NameError: # ganga > 6.3 no longer has the gridProxy credentials system
+            j.backend.credential_requirements = VomsProxy(vo=voms)
+    if name is not None:
+        j.name = name
+        
+    return j
 
 
 # -----------------------------------------------------------------------------
