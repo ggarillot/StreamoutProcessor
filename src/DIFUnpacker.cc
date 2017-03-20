@@ -229,16 +229,19 @@ uint32_t fshift=idx+DU_LINES_SHIFT+1;
 
 if (DIFUnpacker::hasTemperature(cb,idx))
 {
-  std::cout << "Dif " << getID(cb) <<" HasTemp..." << std::endl;
   fshift=idx+DU_TDIF_SHIFT; // jenlev 1
   if (cb[fshift] != DU_START_OF_FRAME)
   {
-    for (uint32_t i=0;i<DU_TDIF_SHIFT;++i)
+    uint32_t i=0;
+    while (i<fshift && cb[i] != DU_START_OF_FRAME)
     {
-      if (cb[i] != DU_START_OF_FRAME)
-        fshift=i;
-    } 
+      ++i;
+    }
+    std::cout << "Dif " << getID(cb) <<" HasTemp..." << std::endl;
+    if (cb[i] == DU_START_OF_FRAME)
       std::cout << "\t *** Found start of frame with Shift " << fshift << std::endl;
+    else 
+      std::cout << "\t *** Did not find a start of Frame" << std::endl;
   }
 }
 
@@ -248,7 +251,7 @@ if (DIFUnpacker::hasAnalogReadout(cb,idx))
 uint32_t fshift=idx+DU_BCID_SHIFT+3;
 #endif
 
-if (cb[fshift]!=DU_START_OF_FRAME && getID(cb)!=0)
+if (cb[fshift]!=DU_START_OF_FRAME)
 {
   printf("\nDIF %d : This is not a start of frame shift= %d value = %02x \n",getID(cb),fshift,cb[fshift]);
 
@@ -269,9 +272,9 @@ if (cb[fshift]!=DU_START_OF_FRAME && getID(cb)!=0)
       printf("\n - cb[%d]: %02x\n",i, cb[i]);
 
   uint i=fshift;
-  while(cb[i] != DU_END_OF_DIF)
+  while(cb[i] != DU_END_OF_DIF && i<max_size)
   {
-    if( cb[i] == DU_END_OF_DIF || cb[i] == DU_END_OF_FRAME || cb[i] == DU_START_OF_DIF || cb[i] == DU_START_OF_FRAME)
+    if( cb[i] == DU_END_OF_FRAME || cb[i] == DU_START_OF_DIF || cb[i] == DU_START_OF_FRAME)
       printf("\t - cb[%d]: %02x\n",i, cb[i]);
     ++i;
   }
@@ -279,8 +282,9 @@ if (cb[fshift]!=DU_START_OF_FRAME && getID(cb)!=0)
   printf("\t --- cb[%d]: %02x\n",i, cb[i]);
   printf("\n");
   
+  std::string s = " --> Not a start of Frame"; 
+  throw s;
   return fshift;
-  //throw "Not a start of Frame";
 }
 
 do
@@ -338,17 +342,16 @@ uint32_t fshift=idx+DU_LINES_SHIFT+1;
 
 if (DIFUnpacker::hasTemperature(cb,idx))
 {
-  // fshift=idx+DU_TDIF_SHIFT+1; // jenlev 1
-  fshift=idx+DU_TASU2_SHIFT; // jenlev 1
-  printf("fshift:\t");
-  for (uint32_t i=idx+DU_LINES_SHIFT+2;i<idx+DU_LINES_SHIFT+6;++i)
-    printf("%d\t", i);
-
-  printf("\nvalue:\t");
-  for (uint32_t i=idx+DU_LINES_SHIFT+2;i<idx+DU_LINES_SHIFT+6;++i)
-    printf("%02x\t",cb[i]);
-  printf("\n");
-}
+  if (cb[fshift] != DU_START_OF_FRAME)
+  {
+    for (uint32_t i=0;i<DU_TDIF_SHIFT;++i)
+    {
+      if (cb[i] != DU_START_OF_FRAME)
+        fshift=i;
+    } 
+      std::cout << "Dif " << getID(cb) <<" HasTemp..." << std::endl;
+      std::cout << "\t *** Found start of frame with Shift " << fshift << std::endl;
+  }}
 
 if (DIFUnpacker::hasAnalogReadout(cb,idx))
   fshift=DIFUnpacker::getAnalogPtr(vLines,cb,fshift); // to be implemented
@@ -387,18 +390,18 @@ do
   printf("fshift %d/%d \n",fshift,max_size);
   if (cb[fshift]==DU_END_OF_DIF)
   {
-    printf("%x ---> endDIF. Found %lu frames",cb[fshift],vFrame.size());
+    printf("%x ---> endDIF. Found %lu frames\n",cb[fshift],vFrame.size());
     return fshift;
   }
 
   if (cb[fshift]==DU_START_OF_FRAME)
   {
-    printf("%x ---> startframe ",cb[fshift]);
+    printf("%x ---> startframe \n",cb[fshift]);
     fshift++;
   }
   if (cb[fshift]==DU_END_OF_FRAME)
   {
-    printf("%x  ---> endframe ",cb[fshift]);
+    printf("%x  ---> endframe \n",cb[fshift]);
     fshift++;
     continue;
   }
@@ -410,7 +413,7 @@ do
     std::cout << " --- frame : " << vFrame.size() << std::endl;
     return (fshift+2);
   }
-  std::cout << "Header:" << header<<" AsicId: " << ((header<<8)&0xFF00) << " fshift: " << fshift << std::endl;
+  // std::cout << "Header:" << header<<" AsicId: " << ((header<<8)&0xFF00) << " fshift: " << fshift << std::endl;
   if ((header<1 || header>48 ) && header != 129)
   {
     std::stringstream s("\t ***");
@@ -420,9 +423,13 @@ do
   }
 
   vFrame.push_back(&cb[fshift]);
-  std::cout << " \t frameContent : ";
+  printf("frameContent : ");
   for (uint32_t i=0;i<DU_FRAME_SIZE;++i)
-    printf("%02x ",cb[fshift+i]);
+    // printf("\ndifId: %02x" );
+  {
+    if (i==4 || i==20) printf("\n");
+   printf("%02x ",cb[fshift+i]);
+  }
   printf("\n");
   fshift+=DU_FRAME_SIZE;
 
@@ -434,8 +441,7 @@ do
 
   if (cb[fshift]==DU_END_OF_FRAME)
   {
-    printf("%x ",cb[fshift]);
-    std::cout << " ---> endframe : " << vFrame.size() << std::endl;
+    printf("%x ---> endframe\n",cb[fshift]);
     fshift++;
   }
 }
