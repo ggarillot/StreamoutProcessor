@@ -160,6 +160,15 @@ def checkPeriod(runNumber, runPeriod, configFile):
         sys.exit(periodError('SPS_10_2016'))
 
 # -----------------------------------------------------------------------------
+def scp(runNumber, serverName, serverPath, localPath):
+    ''' Download file from serverName:serverPath to localPath 
+    '''
+    print ("[{0}] - Downloading run '{1}' from {2}:{3}".format(os.path.basename(__file__), runNumber, serverName, serverPath) )
+    scpPath = serverName + serverPath
+    subprocess.check_call(['scp', scpPath, localPath])#, env=dict(os.environ))
+
+
+# -----------------------------------------------------------------------------
 def createJob(executable, args = [], name='', backend='Local', backendCE='', voms=''):
     ''' Create Ganga job. Default backend is Local
     '''
@@ -247,7 +256,14 @@ def main():
             
         fileNumber = findNumberOfFiles(conf.inputPath, stringToFind)
         if fileNumber == 0:
-            return
+            doScp = raw_input("[{0}] - No file found...download it from '{1}' ? (y/n)".format(scriptName, conf.serverName))
+            if doScp == 'y':
+                try:
+                    scp(runNumber, conf.serverName, conf.serverPath, conf.inputPath)
+                except :
+                    raise("[{0}] - Something wrong happened while downloading with scp".format(scriptName))
+            else :
+                sys.exit('Exiting') 
         print ('OK')
 
         # Check if more/less files available than asked by the user
