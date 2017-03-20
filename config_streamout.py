@@ -1,6 +1,6 @@
 '''
     Configuration file for streamout processor. Is read by streamout.py
-    python steer/streamout.py config_streamout 732875,732882
+    python steer/streamout.py config_streamout run1,run2,etc. numberOfFilesTostreamout(optional, script will runs on all files by default)
 '''
 
 #MRPC Runs
@@ -14,30 +14,112 @@
 '''
 
 # runPeriod = "SPS_12_2014"
+runList=[726201,726238]
+####################
+### Grid Section
+####################
+runOnGrid = True
+backend = 'Local'
+voms = 'calice'
+#CE = 'lyogrid07.in2p3.fr:8443/cream-pbs-calice'
+#CE = 'lpnhe-cream.in2p3.fr:8443/cream-pbs-calice'
+CE = 'grid-cr0.desy.de:8443/cream-pbs-desy'
+gridDownloader = '/home/ilc/pingault/script/carefulDownload.sh'
+gridUploader = '/home/ilc/pingault/script/carefulUpload.sh'
+LCG_CATALOG_TYPE = 'lfc'
+LFC_HOST = 'grid-lfc.desy.de'
+
+eos_home = '/eos/user/a/apingaul/CALICE/'
+#gridDataPath = eos_home + 'data/' + runPeriod 
+gridIlcSoftPath = "/cvmfs/ilc.desy.de/sw/x86_64_gcc49_sl6/"
+gridProcessorPath = eos_home + "Software/Streamout/"
+
+gridInputFiles = [ # xmlFile and marlinLibrary are added after
+              gridProcessorPath + 'run_marlin.py',
+              gridProcessorPath + 'Marlin.py',
+              # gridProcessorPath + 'StreamoutProcessor.xml',
+              # gridUploader,
+              # gridDownloader
+              ] 
+               # os.path.relpath(xmlFile, processorPath + '/'),
+              # '%s/DifGeom/m3_bonneteau.xml' %path
+
+
+
+
+####################
+### Global variables
+####################
+ilcSoftVersion = "v01-19-01"
+# ilcSoftVersion = "v01-17-09"
+ilcSoftPath = "/opt/ilcsoft/"
+if runOnGrid is True:
+    ilcSoftPath = gridIlcSoftPath
+initILCSoftScript = ilcSoftPath + ilcSoftVersion + "/init_ilcsoft.sh"
+marlinCfgFile = "marlinCfg_{0}.yml" #.format(runNumber) cfgFile name written by script to properly run marlin with all variables set
+
+# All data are assumed to be in a perPeriod subfolder
+runPeriod = "SPS_12_2014"
 # runPeriod = "SPS_04_2015"
 # runPeriod = "PS_06_2015"
 # runPeriod = "SPS_10_2015"
-runPeriod = "SPS_06_2016"
+# runPeriod = "SPS_06_2016"
+# runPeriod = "SPS_10_2016"
 
+# General Path to find/store data: the following assumes that all data is in a subfolder of dataPath
+# Overwritten by gridDataPath if runOnGrid is True
 # dataPath = "/Users/antoine/CALICE/DataAnalysis/data"
-dataPath = "/Volumes/PagosDisk/CALICE/data/%s" % runPeriod
+dataPath = "/Volumes/PagosDisk/CALICE/data/%s" % runPeriod # Local
+gridDataPath = eos_home + 'Data/' + runPeriod 
+# dataPath = "/scracth/SDHCAL/data/%s" % runPeriod # Lyoserv
+# dataPath = "/eos/users/a/apingaul/CALICE/Data%s" % runPeriod # Lxplus
+
+if runOnGrid is True:
+    dataPath = gridDataPath
+
 inputPath = "%s/Raw" % dataPath
 outputPath = "%s/Streamout" % dataPath
 plotPath = "%s/Plots" % dataPath
 logPath = "%s/Logs" % dataPath
 
-logFile = "%s/streamLog_%s" # % (logPath, runNumber)
-
-inputFile = "%s/DHCAL_%d_I0_%d.slcio" # % (intputPath, runNumber, streamoutFileNumber)
-outputFile = "%s/DHCAL_%d_SO" # extension slcio/root added in xml # % (outputPath,runNumber)
-
-
-
+logFile = "{0}/streamLog_{1}" # % (logPath, runNumber)
+inputFile = "%s/DHCAL_%d_I0_%d.slcio" # % (inputPath, runNumber, streamoutFileNumber)
+outputFile = "%s/DHCAL_%d_SO_TAIS" # extension slcio/root added in script # % (outputPath,runNumber)
 
 processorPath = "/Users/antoine/CALICE/Software/Streamout"
-xmlFile = "%s/StreamoutProcessor.xml" % processorPath # XML file to be generated # % processorPath
-marlinLib = "%s/lib/libStreamoutMarlin.dylib" % processorPath # Marlin library for processor # % processorPath
+if runOnGrid is True:
+    processorPath = gridProcessorPath
+xmlFile = "{0}/StreamoutProcessor.xml".format(processorPath) # Path to XML file
+# marlinLib = "{0}/lib/libStreamoutMarlin.dylib".format(processorPath) # Marlin library for processor
+marlinLib = "{0}/lib/libStreamoutMarlin.so".format(processorPath) # Marlin library for processor
+if runOnGrid is True:
+    gridInputFiles.append(xmlFile)
+    gridInputFiles.append(marlinLib)
+    # gridInputFiles.append(marlinCfgFile)
 
+
+####################
+### Scp section for autoDownload before running
+####################
+# If file not available, use serverName to scp it from.
+serverName = 'lyoac29'
+# serverName = 'lyoac30'
+# serverName = 'lyosdhcal10'
+# serverName = 'lyosdhcal12'
+
+serverDataPath = ''
+if runPeriod == 'SPS_12_2014':
+    serverDataPath = '/data/NAS/December2014/'
+if runPeriod == 'SPS_04_2015':
+    serverDataPath = '/data/NAS/Avril2015/'
+if runPeriod == 'SPS_06_2015':
+    serverDataPath = '/data/NAS/May2015/'
+if runPeriod == 'SPS_10_2015':
+    serverDataPath = '/data/NAS/October2015/'
+if runPeriod == 'SPS_06_2016':
+    serverDataPath = '/data/NAS/June2016/'
+if runPeriod == 'SPS_10_2016':
+    serverDataPath = '/data/NAS/Oct2016/'
 
 processorList = [["MyStreamoutProcessor", "StreamoutProcessor"]] # List of [name,type]
 verbosity = "DEBUG0"

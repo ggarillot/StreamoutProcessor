@@ -11,6 +11,7 @@ import sys
 import time
 import subprocess
 import shlex # split properly command line for Popen
+from marlin import Marlin # if error importing it move streamout.py to same folder
 # from lxml import etree
 from ganga import *
 
@@ -188,6 +189,14 @@ def createJob(executable, args = [], name='', backend='Local', backendCE='', vom
 
 
 # -----------------------------------------------------------------------------
+def setCliOptions(marlin, xmlSection):
+    ''' properly set cliOptions from configfile for marlin.py
+    '''
+    sectionName = xmlSection.name + "."
+    for param, value in vars(xmlSection).items():
+        if param != 'name':
+            marlin.setCliOption(sectionName + param, value)
+# -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def main():
     '''
@@ -296,7 +305,19 @@ def main():
 
 
 
+        # Marlin configuration 
+        marlinCfgFile = conf.marlinCfgFile.format(runNumber)
+        marlin = Marlin()
+        marlin.setXMLConfig(conf.xmlFile)
+        marlin.setLibraries(conf.marlinLib)
+        marlin.setILCSoftScript(conf.initILCSoftScript)
+        setCliOptions(marlin, conf.glob) # TODO: Move to Marlin.py
+        setCliOptions(marlin, conf.streamoutProc)        
+        marlin.writeConfigFile(marlinCfgFile)
+        
+        # Add gridInfo to Marlin configuration file + make Dic 
         if conf.runOnGrid is True:
+            marlinRunDic[marlinCfgFile] = inputDataFileList
         else: # Running locally
             log = open(conf.logFile.format(conf.logPath, runNumber), "w", 1) # line-buffered
             print("\n[{0}] ========================".format(scriptName))
@@ -312,7 +333,69 @@ def main():
             # print ('[{0}] - Removing xmlFile...'.format(scriptName), end='')
             # subprocess.Popen(["rm", xmlFile])
 
+    if conf.runOnGrid is True:
+        args = [[str(cfgFile)] for cfgFile in marlinRunDic.keys()]
+        print("Args:\n")
+        print (args)
 
+        try:
+            print ("[{0}] --- Submiting Job ... ".format(scriptName))
+            
+            # j = createJob(executable='/usr/bin/python', args=['run_marlin.py'], backend=conf.backend)     
+            # if conf.backend == 'Local':
+                # j = createJob(executable='run_marlin.py', backend=conf.backend)
+            # else :
+            j = createJob(executable='run_marlin.py', args = [], name='test', backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
+   
+            # inFiles = []
+            # for f in conf.gridInputFiles: # configuration files,marlin lib etc.
+                # inFiles.append(LocalFile(f))
+            j.inputfiles = [LocalFile(f) for f in conf.gridInputFiles]
+            
+            #            for f in inputDataFileList: # Datafiles
+            # j.inputdata=GangaDataset(files=[MassStorageFile(f) for f in inputDataFileList])
+            
+            print ("\n["+scriptName+"] Using the following files as input:")
+            for f in j.inpuFiles:
+                print (f)
+            # j.parallel_submit = True
+            j.outputfiles = [MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{sjid}/{fname}')]
+
+            # inputFiles=[]
+            # for spe in marlinRunDic.values():
+            #     inputDataFiles=list(genericFile)
+            #     for item in spe:
+            #         l.append(item)
+            #     inputFiles.append(l)
+            # print (inputFiles)
+            
+            s = GenericSplitter()
+            s.multi_attrs={
+                        'application.args': args,
+                        'inputfiles': args,
+                        'inputdata': marlinRunDic.values()
+                        }
+            # j.application.args = ['__GangaInputData.txt__']
+            # j.inputdata = GangaDataset( files=[ LocalFile('*.txt') ] )
+            print (s.multi_attrs)
+            j.splitter = s
+            j.info
+            print ("\n["+j.name+"] Writing the following files to EOS:")
+            print (j.outputfiles)
+            for files in j.outputfiles:
+                files.locations
+            print ("\n["+j.name+"] Now submitting the job ...")
+            
+            # get files 
+            # j.submit()
+            print ("\n["+j.name+"] ... submitting job done.\n")
+
+            #queues.add(j.submit)
+
+
+        except:
+            print ("[{0}] --- Failed to submit job ".format(scriptName))
+            raise
 
 
 # -----------------------------------------------------------------------------
