@@ -539,6 +539,26 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   pOutLCEvent->setTimeStamp (pLCEvent->getTimeStamp());
   pOutLCEvent->setWeight (pLCEvent->getWeight());
   m_runNumber = int(pLCEvent->getRunNumber());
+
+  // Write marlin parameters used
+  StringVec paramKeys;
+  parameters()->marlin::StringParameters::getStringKeys( paramKeys );
+
+  for ( unsigned int i = 0; i < paramKeys.size(); i++ ) {
+      StringVec paramValues;
+      parameters()->getStringVals(paramKeys[i], paramValues);
+
+      std::string str;
+      for ( unsigned int j = 0; j < paramValues.size(); j++ ) {
+        str += paramValues[j].c_str();
+        str += " ";
+      }
+      // streamlog_out( DEBUG ) << "\t param : "   << paramKeys[i]
+      // << ":  "  << str
+      // << std::endl ;
+      pOutLCEvent->parameters().setValues(paramKeys[i].c_str(), paramValues);
+  }
+
   try
   {
     pOutLCEvent->addCollection(pRawCalorimeterHitCollection, m_outputCollectionName);
