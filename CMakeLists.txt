@@ -55,10 +55,11 @@ ENDIF()
 ### LIBRARY #################################################################
 
 # definitions to pass to the compiler
-ADD_DEFINITIONS( "-Wall -pedantic -Wunused-value -O2" )
-ADD_DEFINITIONS( "-Wno-long-long -Wreturn-type" )
-ADD_DEFINITIONS( "-std=c++11" )
+# ADD_DEFINITIONS( "-Wall -pedantic -Wunused-value -O2" )
+# ADD_DEFINITIONS( "-Wno-long-long -Wreturn-type" )
 # -Werror" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -std=c++11 -O2 -Wno-effc++ -Wno-shadow")
+
 
 # include directories
 INCLUDE_DIRECTORIES( include )
