@@ -360,6 +360,22 @@ def main():
         try:
             print ("[{0}] --- Submiting Job ... ".format(scriptName))
             
+            eos_installation ='/afs/cern.ch/project/eos/installation/user/'
+            eos_home='/eos/user/a/apingaul/CALICE/'
+            
+            # Update ganga configuration for eos access
+            config.Output.MassStorageFile['defaultProtocol'] = 'root://eosuser.cern.ch'
+            config.Output.MassStorageFile['uploadOptions']['cp_cmd'] = eos_installation + 'bin/eos.select cp'
+            config.Output.MassStorageFile['uploadOptions']['ls_cmd'] = eos_installation + 'bin/eos.select ls'
+            config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'] = eos_installation + 'bin/eos.select mkdir'
+            config.Output.MassStorageFile['uploadOptions']['path'] = eos_home
+            # Print it
+            print (config.Output.MassStorageFile['defaultProtocol'])
+            print (config.Output.MassStorageFile['uploadOptions']['cp_cmd'])
+            print (config.Output.MassStorageFile['uploadOptions']['ls_cmd'])
+            print (config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
+            print (config.Output.MassStorageFile['uploadOptions']['path'])
+
             # j = createJob(executable='/usr/bin/python', args=['run_marlin.py'], backend=conf.backend)     
             # if conf.backend == 'Local':
                 # j = createJob(executable='run_marlin.py', backend=conf.backend)
