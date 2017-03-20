@@ -8,6 +8,7 @@ from __future__ import print_function # import print function from py3 if runnin
 
 import os
 import sys
+sys.path.append(".")
 import time
 import subprocess
 import shlex # split properly command line for Popen
