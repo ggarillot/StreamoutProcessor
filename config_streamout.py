@@ -10,10 +10,20 @@
 # runList = ['''732865''', 732864, 732863, 732861, 732860, 732853, '''732852'''] # use this list if no runNumber specified when running streamout.py
 
 
+
+'''
+    Dec2014
+    ----------
+    State 158 - Lead 8mm - Cerenkov Muons
+    80     70     60     50     40     30     20     
+    726407 726408 726409 726411 726412 726413 726414
+    ----------
+    State 150 - Lead 4mm - Cerenkov Muons
+    
+    
     726371 726370 726369 726368 726362 726360 726357 726356 726354 726345 726344 726339 726338 726337 726335 726328 726310 726307 726306 726305 
 '''
 
-# runPeriod = "SPS_12_2014"
 runList=[726201,726238]
 ####################
 ### Grid Section
@@ -121,42 +131,56 @@ if runPeriod == 'SPS_06_2016':
 if runPeriod == 'SPS_10_2016':
     serverDataPath = '/data/NAS/Oct2016/'
 
-processorList = [["MyStreamoutProcessor", "StreamoutProcessor"]] # List of [name,type]
-verbosity = "DEBUG0"
 
-inputCollectionType = "LCGenericObject"
-inputCollectionName = "RU_XDAQ"
-outputCollectionType = "RawCalorimeterHit"
-outputCollectionName = "DHCALRawHits"
+####################
+### Marlin parameters
+####################
+
+class xmlOptionSection(object):
+    def __init__(self, optionName):
+        self.name = optionName
+
+### Global param
+###
+glob = xmlOptionSection('global')
+glob.Verbosity = "DEBUG0"
+glob.MaxRecordNumber = 5 # Max Number of event to process
+glob.SkipNEvents = 0 # Number of event to skip
+glob.LCIOInputFiles = []
 
 
+### Processor param
+###
+streamoutProc = xmlOptionSection('MyStreamoutProcessor')
+# glob.inputCollectionType = "LCGenericObject"
+streamoutProc.InputCollectionName = "RU_XDAQ"
+# glob.outputCollectionType = "RawCalorimeterHit"
+streamoutProc.OutputCollectionName = "DHCALRawHits"              
+# streamoutProc.exportROOT = True # Write to root file (Not implemented yet)
 
-exportROOT = True # Write to root file (Not implemented yet)
+streamoutProc.RU_SHIFT = 23 # Not used?
+streamoutProc.DropFirstRU = False # Drop first Trigger
+streamoutProc.SkipFullAsic = True # Skip asic with all 64 channels lit up
 
-maxEvt = 0 # Max Number of event to process
-nSkipEvt = 0 # Number of event to skip
 
-ruShift = 23 # Not used?
-
-dropRu = False # Drop first Trigger
-skipFullAsic = True # Skip asic with all 64 channels lit up
-
+streamoutProc.CerenkovDifId = 3 # Since May2015
+streamoutProc.Before2016Data = True # Bool for Ecal data detection (change in data format in 2016)
 
 if runPeriod.find("2012") != -1:
-    xDaqShift = 92 #? 2012
-    before2016Data = True # Bool for Ecal data detection
+    streamoutProc.XDAQ_SHIFT = 92 #? 2012
 
-elif runPeriod.find("2014") != -1 or runPeriod.find("2015") != -1:
-    xDaqShift = 24 # 2014-2015
-    cerenkovDifId = 1 # Dec2014
-    before2016Data = True # Bool for Ecal data detection
+elif runPeriod.find("2014") != -1:
+    streamoutProc.XDAQ_SHIFT = 24 # 2014-2015
+    streamoutProc.CerenkovDifId = 1 # Dec2014
 
+elif runPeriod.find("2015") != -1:
+    streamoutProc.XDAQ_SHIFT = 24 # 2014-2015
+    
 elif runPeriod.find("2016") != -1:
-    xDaqShift = 20 # Since June2016
-    cerenkovDifId = 3 # Since May2015
-    before2016Data = False # Bool for Ecal data detection
-    treatEcal = False
-    EcalDetectorIds = "201 1100"
+    streamoutProc.XDAQ_SHIFT = 20 # Since June2016
+    streamoutProc.Before2016Data = False # Bool for Ecal data detection
+    streamoutProc.TreatEcal = False
+    streamoutProc.EcalDetectorIds = "201 1100"
 
 else:
     print "[config_streamout] - runPeriod '%s' is wrong or undefined in configuration file" % runPeriod

@@ -286,6 +286,11 @@ def main():
 
         # List of inputfiles for current run, reused for grid importation
         inputDataFileList = listFiles(fileNumber, runNumber, conf.fileName, conf.filePath)
+        conf.glob.LCIOInputFiles = inputDataFileList
+        outputFile = conf.outputFile % (conf.outputPath, runNumber)
+        conf.streamoutProc.LCIOOutputFile = outputFile + ".slcio"
+        conf.streamoutProc.ROOTOutputFile = outputFile + ".root"
+        
         print ("[{0}] - output file : {1}.slcio".format(scriptName, outputFile))
         print ("[{0}] - MARLIN_DLL: {1}".format(scriptName, conf.marlinLib))
 
