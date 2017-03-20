@@ -3,4 +3,3 @@
 build/
 lib/
 *.pyc
-config_streamout.pyc
