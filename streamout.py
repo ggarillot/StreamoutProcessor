@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """
     Configuration module for Streamout Marlin processor
     Generate the xml file with data imported from external config file
@@ -5,6 +6,7 @@ export PYTHONPATH=/cvmfs/ganga.cern.ch/Ganga/install/6.3.0/python:${PYTHONPATH}
 """
 
 from __future__ import print_function # import print function from py3 if running py2.x
+from __future__ import absolute_import
 
 import os
 import sys
