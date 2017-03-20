@@ -16,7 +16,9 @@ from ganga import *
 
 # Import default config file
 # Not needed here just for dumb editor not to complain about config not existing
-import config_streamout as config
+import config_streamout as conf
+
+
 # # -----------------------------------------------------------------------------
 # def xmlValueBuilder(rootHandle, xmlHandleName, value, parameterType=None, option=None, optionValue=None, xmlParList=None):
 #     ''' Generate Marlin compliant xml options
@@ -200,9 +202,12 @@ def main():
             if len(sys.argv) > 3:
                 # --- Load number of streamoutFile to process
                 fileNum = int(sys.argv[3])
-    else:
-        print ("Please give : configFile - runNumber(s)(optional if set up in configFile) - Number of streamout file to process(optional)")
-        return   
+    elif conf.runList : # runNumber configured in configFile
+        runList = conf.runList
+        print ("[{0}] : Running with configuration file '{1}' on runs '{2}'".format(scriptName, configFile, runList))
+    else :
+        sys.exit("Please give : configFile - runNumber(s)(optional if set up in configFile) - Number of streamout file to process(optional)")
+        
     # --- /Parse CLI arguments
 
 
@@ -210,7 +215,7 @@ def main():
     # --- Load List of runs
     if runListArg is None: # if no runs on CLI, load list from configFile
         try:
-            runList = config.runList
+            runList = conf.runList
         except AttributeError:
             sys.exit("[{0}] - No runs specified at command line or in configFile...exiting".format(scriptName))
     else:
@@ -219,13 +224,24 @@ def main():
 
 
 
+
+
+    # For grid run, define a dictionary of generated configFile and associated inputFiles for each run
+    marlinRunDic = {}
+
+
     for run in runList:
-        checkPeriod(run, config.runPeriod, configFile)
+        #Check if runNumber match given period in configFile
+        checkPeriod(str(run), conf.runPeriod, configFile)
         runNumber = int(run)
         #   List number of files to streamout (raw data are split in 2Go files with
         #   format DHCAL_runNumber_I0_fileNumber.slcio )
-        print ('\n\n[Streamout.py] - Looking for files to streamout for run \'%d\' in \'%s\'... ' % (runNumber, config.inputPath), end="")
         stringToFind = 'DHCAL_{0}_I0_'.format(runNumber)
+        print ("[{0}] - Looking for files to streamout for run '{1}' in '{2}'... ".format(scriptName, runNumber, conf.inputPath), end="")
+        if os.path.exists(conf.inputPath) is False:
+            sys.exit("\n[{0}] - Folder '{1}' does not exist...exiting".format(scriptName, conf.inputPath))
+            
+        fileNumber = findNumberOfFiles(conf.inputPath, stringToFind)
         if fileNumber == 0:
             return
         print ('OK')
@@ -233,35 +249,48 @@ def main():
         # Check if more/less files available than asked by the user
         if fileNum is not None:
             if fileNum != fileNumber:
-        inputFiles = listFiles(fileNumber, runNumber)
-        outputFile = config.outputFile % (config.outputPath, runNumber) # extension slcio/root added in the xml generator
-        print ("[Streamout.py] - output file : %s.slcio" % outputFile)
-        print ("[Streamout.py] - MARLIN_DLL: %s" % (config.marlinLib))
-
-        if os.path.exists("%s.slcio" % outputFile) is True:
-            print ("[Streamout.py] - OutputFile already present...exiting")
-            return
-                    
-
-
-        log = open(config.logFile % (config.logPath, runNumber), "w", 1) # line-buffered
-        print("\n[Streamout.py] ========================")
-        print ('[Streamout.py] --- Running Marlin...')
-        print ('[Streamout.py] --- Ouput is logged to \'%s\'' % log)
-        beginTime = time.time()
-        subprocess.call(["Marlin", config.xmlFile], env=dict(os.environ, MARLIN_DLL=config.marlinLib, MARLINDEBUG="1"), stdout=log)
-        print ('[Streamout.py] - Running Marlin...OK, - ', end='')
-        elapsedTime(beginTime)
-        print("[Streamout.py] ========================\n")
-
-        print ('[Streamout.py] - Removing xmlFile...', end='')
-        subprocess.Popen(["rm", config.xmlFile])
-        print ("OK")
                 ans = raw_input('\n\t [{}] - *** WARNING! *** Found {} files for run {}, you asked to process {}. Proceed? (y/n)\n'.format(scriptName, fileNumber, runNumber, fileNum))
                 if ans == 'y':
                     fileNumber = fileNum
                 else:
                     sys.exit('Exiting')
+
+        # List of inputfiles for current run, reused for grid importation
+        inputDataFileList = listFiles(fileNumber, runNumber, conf.fileName, conf.filePath)
+        print ("[{0}] - output file : {1}.slcio".format(scriptName, outputFile))
+        print ("[{0}] - MARLIN_DLL: {1}".format(scriptName, conf.marlinLib))
+
+        if os.path.exists("{0}.slcio".format(outputFile)) is True:
+            sys.exit("[{0}] - OutputFile already present : Delete or move it before running again...exiting".format(scriptName))
+        # Printing modification to xml file
+        print("\n[{0}] ========================".format(scriptName))
+        print("[{0}] --- Dumping modified xml parameters: ".format(scriptName))
+        for par, value in vars(conf.glob).items():
+            if par != 'name':
+                print ("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
+        for par, value in vars(conf.streamoutProc).items():
+            if par != 'name':
+                print ("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
+        print("[{0}] ========================\n".format(scriptName))
+
+
+
+
+        if conf.runOnGrid is True:
+        else: # Running locally
+            log = open(conf.logFile.format(conf.logPath, runNumber), "w", 1) # line-buffered
+            print("\n[{0}] ========================".format(scriptName))
+            print ('[{0}] --- Running Marlin...'.format(scriptName))
+            print ("[{0}] --- Ouput is logged to '{1}'".format(scriptName, log))
+            beginTime = time.time()
+            # subprocess.call(['python', 'run_marlin.py', marlinCfgFile])
+            subprocess.call(['python', 'run_marlin.py', marlinCfgFile], stdout=log, stderr=log)
+            print ('[{0}] - Running Marlin...OK - '.format(scriptName), end='')
+            elapsedTime(beginTime)
+            print("[{0}] ========================\n".format(scriptName))
+
+            # print ('[{0}] - Removing xmlFile...'.format(scriptName), end='')
+            # subprocess.Popen(["rm", xmlFile])
 
 
 
