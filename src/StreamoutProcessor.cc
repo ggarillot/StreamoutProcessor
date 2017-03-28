@@ -375,7 +375,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
       }
       }
 
-      bool isSynchronised = true;
+      bool isSynchronised = false;
       // TODO add synchronisation from laurent streamout?
       // if ((std::find(seeds.begin(), seeds.end(), pDifPtr->getFrameTimeToTrigger(f)) == seeds.end()) &&
       //     (std::find(seeds.begin(), seeds.end(), pDifPtr->getFrameTimeToTrigger(f) - 1) == seeds.end()) &&
