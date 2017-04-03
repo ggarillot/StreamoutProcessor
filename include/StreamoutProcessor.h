@@ -24,6 +24,7 @@
 
 // -- stl headers
 #include <iostream>
+#include <algorithm>
 
 // -- Streamout headers
 #include "DIFUnpacker.h"
