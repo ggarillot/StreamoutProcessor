@@ -1,0 +1,27 @@
+<marlin>
+  <execute>
+    <processor name="MyStreamoutProcessor"/>
+  </execute>
+  <global>
+    <parameter name="LCIOInputFiles"></parameter>
+    <parameter name="MaxRecordNumber">0</parameter>
+    <parameter name="SkipNEvents">0</parameter>
+    <parameter name="Verbosity" options="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT">DEBUG0</parameter>
+  </global>
+  <processor name="MyStreamoutProcessor" type="StreamoutProcessor">
+    <parameter name="Verbosity" type="string" options="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT">DEBUG0</parameter>
+    <parameter name="InputCollectionName" type="string" lcioInType="LCGenericObject">RU_XDAQ</parameter>
+    <parameter name="OutputCollectionName" type="string" lcioOutType="LCGenericObject">DHCALRawHits</parameter>
+    <parameter name="LCIOOutputFile" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Streamout/DHCAL_728603_SO_TAIS.slcio</parameter>
+    <parameter name="ROOTOutputFile" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Streamout/DHCAL_728603_SO_TAIS.root</parameter>
+    <parameter name="PlotFolder" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Plots</parameter>
+    <parameter name="RU_SHIFT" type="int">23</parameter>
+    <parameter name="XDAQ_SHIFT" type="int">24</parameter>
+    <parameter name="CerenkovDifId" type="int">3</parameter>
+    <parameter name="DropFirstRU" type="bool">False</parameter>
+    <parameter name="SkipFullAsic" type="bool">True</parameter>
+    <parameter name="Before2016Data" type="bool">True</parameter>
+    <parameter name="TreatEcal" type="bool">False</parameter>
+    <parameter name="EcalDetectorIds" type="std::vector&ltint&gt">201 1100</parameter>
+  </processor>
+</marlin>
