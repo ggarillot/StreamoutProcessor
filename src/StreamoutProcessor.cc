@@ -229,9 +229,6 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     return;
   }
 
-  int numElements = pLCCollection->getNumberOfElements(); // hit number
-  streamlog_out( DEBUG ) << " Number of hits in collection '" << m_inputCollectionName << "' : " << numElements << std::endl;
-
   // create the output collection
   IMPL::LCCollectionVec *pRawCalorimeterHitCollection = new IMPL::LCCollectionVec(EVENT::LCIO::RAWCALORIMETERHIT);
 
@@ -248,13 +245,17 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   for ( int e = 0 ; e < pLCCollection->getNumberOfElements() ; e++)
   {
     if (e == 0 && m_dropFirstRU)
-      continue;
-
+      {
+	std::cout << " Dropping RU.....\n\n"<<std::endl;
+	continue;
+      }
     LMGeneric *pLCGenericObject = (LMGeneric *)(pLCCollection->getElementAt(e));
 
     if (NULL == pLCGenericObject)
-      continue;
-
+      {
+	std::cout<< " null object! \n\n" << std::endl;
+	continue;
+      }
     // grab the generic object contents
     int *pGenericRawBuffer = &(pLCGenericObject->getIntVector()[0]);
     unsigned char *pRawBuffer = (unsigned char *)pGenericRawBuffer;
@@ -278,7 +279,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
 
       if (find(m_ecalDetectorIds.begin(), m_ecalDetectorIds.end(), _iptr[0]) != m_ecalDetectorIds.end())
       {
-        streamlog_out ( DEBUG0 ) << red << "Skipping ECAL data with detId '" << _iptr[0] << "'" << normal << std::endl;
+        streamlog_out ( DEBUG ) << red << "Skipping ECAL data with detId '" << _iptr[0] << "'" << normal << std::endl;
         continue;
       }
     }
@@ -348,7 +349,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     if ( 0 != cerTagFrameLevel[0] || 0 != cerTagFrameLevel[1])
       streamlog_out( MESSAGE )  << " - TagFrameLevel0 : " << cerTagFrameLevel[0] << " / TagFrameLevel1 : " << cerTagFrameLevel[1] << std::endl;
 
-    pRawCalorimeterHitCollection->parameters().setValues("CerTagFrameLevel", cerTagFrameLevel);
+    // pRawCalorimeterHitCollection->parameters().setValues("CerTagFrameLevel", cerTagFrameLevel);
 
     for (unsigned int f = 0 ; f < pDifPtr->getNumberOfFrames() ; f++)
     {
@@ -371,6 +372,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
           {
             streamlog_out(ERROR) << " Removing Full asic from cerenkovDif ??? " << std::endl;
           }
+            streamlog_out(ERROR) << " Removing Full asic" << std::endl;
           continue;
       }
       }
@@ -472,7 +474,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         pRawCalorimeterHit->setCellID0(id0);
         pRawCalorimeterHit->setCellID1(id1);
         pRawCalorimeterHit->setAmplitude(amplitudeBitSet.to_ulong());
-        pRawCalorimeterHit->setTimeStamp(frameTime);
+	unsigned long int TTT = (unsigned long int)(pDifPtr->getFrameTimeToTrigger(f));
+        pRawCalorimeterHit->setTimeStamp(TTT);
+
 
 
         // if (f == 0){
@@ -531,6 +535,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     return;
   }
 
+  streamlog_out( DEBUG ) << " Number of hits in event '" << pLCEvent->getEventNumber() << "' : " << pRawCalorimeterHitCollection->getNumberOfElements() << std::endl;
+  std::cout << pLCEvent->getEventNumber() << " Number of Hit BiBitch" << pRawCalorimeterHitCollection->getNumberOfElements() << std::endl;
+
   // add the collection to event
   IMPL::LCEventImpl * pOutLCEvent = new IMPL::LCEventImpl();
   pOutLCEvent->setRunNumber (pLCEvent->getRunNumber());
@@ -541,23 +548,23 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   m_runNumber = int(pLCEvent->getRunNumber());
 
   // Write marlin parameters used
-  StringVec paramKeys;
-  parameters()->marlin::StringParameters::getStringKeys( paramKeys );
+  // StringVec paramKeys;
+  // parameters()->marlin::StringParameters::getStringKeys( paramKeys );
 
-  for ( unsigned int i = 0; i < paramKeys.size(); i++ ) {
-      StringVec paramValues;
-      parameters()->getStringVals(paramKeys[i], paramValues);
+  // for ( unsigned int i = 0; i < paramKeys.size(); i++ ) {
+  //     StringVec paramValues;
+  //     parameters()->getStringVals(paramKeys[i], paramValues);
 
-      std::string str;
-      for ( unsigned int j = 0; j < paramValues.size(); j++ ) {
-        str += paramValues[j].c_str();
-        str += " ";
-      }
-      // streamlog_out( DEBUG ) << "\t param : "   << paramKeys[i]
-      // << ":  "  << str
-      // << std::endl ;
-      pOutLCEvent->parameters().setValues(paramKeys[i].c_str(), paramValues);
-  }
+  //     std::string str;
+  //     for ( unsigned int j = 0; j < paramValues.size(); j++ ) {
+  //       str += paramValues[j].c_str();
+  //       str += " ";
+  //     }
+  //     // streamlog_out( DEBUG ) << "\t param : "   << paramKeys[i]
+  //     // << ":  "  << str
+  //     // << std::endl ;
+  //     pOutLCEvent->parameters().setValues(paramKeys[i].c_str(), paramValues);
+  // }
 
   try
   {
