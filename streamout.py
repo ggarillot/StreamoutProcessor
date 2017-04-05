@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
     Configuration module for Streamout Marlin processor
     Generate the xml file with data imported from external config file
@@ -360,83 +360,83 @@ def main():
                 ymlfile.write(yaml.dump(cfg, default_flow_style=False))
 
 ###
-        try:
-            print ("[{0}] --- Submiting Job ... ".format(scriptName))
-            # Navigate jobtree, if folder doesn't exist create it
-            treePath = conf.runPeriod + '/' + scriptName[:-3] # Remove .py at end of scriptName
-            # if jobtree.exists(treePath) is False: # Always returns true...
-            jobtree.cd('/') # make sure we are in root folder
-            try :                
-                jobtree.cd(treePath) 
-            except TreeError:
-                try:
-                    jobtree.mkdir(treePath)
-                except: # mkdir should write all missing folder if any....apparently not true
-                    print("WhatThe?")
-                    jobtree.mkdir(conf.runPeriod)            
-                    jobtree.mkdir(treePath)
-                jobtree.cd(treePath)
-                
-            eos_installation ='/afs/cern.ch/project/eos/installation/user/'
-            eos_home='/eos/user/a/apingaul/CALICE/'
-            
-            # Update ganga configuration for eos access
-            config.Output.MassStorageFile['defaultProtocol'] = 'root://eosuser.cern.ch'
-            config.Output.MassStorageFile['uploadOptions']['cp_cmd'] = eos_installation + 'bin/eos.select cp'
-            config.Output.MassStorageFile['uploadOptions']['ls_cmd'] = eos_installation + 'bin/eos.select ls'
-            config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'] = eos_installation + 'bin/eos.select mkdir'
-            config.Output.MassStorageFile['uploadOptions']['path'] = eos_home
-            # Print it
-            print (config.Output.MassStorageFile['defaultProtocol'])
-            print (config.Output.MassStorageFile['uploadOptions']['cp_cmd'])
-            print (config.Output.MassStorageFile['uploadOptions']['ls_cmd'])
-            print (config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
-            print (config.Output.MassStorageFile['uploadOptions']['path'])
+            try:
+                print ("[{0}] --- Submiting Job ... ".format(scriptName))
+                # Navigate jobtree, if folder doesn't exist create it
+                treePath = conf.runPeriod + '/' + scriptName[:-3] # Remove .py at end of scriptName
+                # if jobtree.exists(treePath) is False: # Always returns true...
+                jobtree.cd('/') # make sure we are in root folder
+                try :                
+                    jobtree.cd(treePath) 
+                except TreeError:
+                    try:
+                        jobtree.mkdir(treePath)
+                    except: # mkdir should write all missing folder if any....apparently not true
+                        print("WhatThe?")
+                        jobtree.mkdir(conf.runPeriod)            
+                        jobtree.mkdir(treePath)
+                    jobtree.cd(treePath)
+
+                eos_installation ='/afs/cern.ch/project/eos/installation/user/'
+                eos_home='/eos/user/a/apingaul/CALICE/'
+
+                # Update ganga configuration for eos access
+                config.Output.MassStorageFile['defaultProtocol'] = 'root://eosuser.cern.ch'
+                config.Output.MassStorageFile['uploadOptions']['cp_cmd'] = eos_installation + 'bin/eos.select cp'
+                config.Output.MassStorageFile['uploadOptions']['ls_cmd'] = eos_installation + 'bin/eos.select ls'
+                config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'] = eos_installation + 'bin/eos.select mkdir'
+                config.Output.MassStorageFile['uploadOptions']['path'] = eos_home
+                # Print it
+                print (config.Output.MassStorageFile['defaultProtocol'])
+                print (config.Output.MassStorageFile['uploadOptions']['cp_cmd'])
+                print (config.Output.MassStorageFile['uploadOptions']['ls_cmd'])
+                print (config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
+                print (config.Output.MassStorageFile['uploadOptions']['path'])
 
 
 
-            
-            inputFiles = []
-            for f in conf.gridInputFiles:
-                inputFiles.append(LocalFile(f))
-            inputFiles.append(LocalFile(marlinCfgFile))
-            print ('inputFiles:\n', inputFiles)
-            
-            inputData=[]
-            for item in [inputDataFileList]:
-                l = []
-                print ("\nitem=",item,"\n")
-                for f in item:
-                    l.append(MassStorageFile(f))
-                print ("\nl=",l,"\n")
-                for f in l:
-                    print ("\nf=",f,"\n")
-                
-            inputData = GangaDataset(treat_as_inputfiles=False, files=[f for f in l])
 
-            print ('\n\ninputDataType:\n', type(inputData))
-            print ('\n\ninputData:\n', inputData)
-            for item in inputData:
-                print (type(item))
-                print (item)
-            
-            j = createJob(executable='run_marlin.py', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
-            j.comment = "Streamout " + conf.runPeriod
-            j.outputfiles = [MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')]
-            j.inputfiles = inputFiles
-            j.inputdata = inputData
+                inputFiles = []
+                for f in conf.gridInputFiles:
+                    inputFiles.append(LocalFile(f))
+                inputFiles.append(LocalFile(marlinCfgFile))
+                print ('inputFiles:\n', inputFiles)
 
-            # Save job as txtfile locally
-            # export(jobs(j.id), 'my_job.txt')
+                inputData=[]
+                for item in [inputDataFileList]:
+                    l = []
+                    print ("\nitem=",item,"\n")
+                    for f in item:
+                        l.append(MassStorageFile(f))
+                    print ("\nl=",l,"\n")
+                    for f in l:
+                        print ("\nf=",f,"\n")
 
-            jobtree.add(j)            
-            j.submit()
-            print ("\n[{0}] ... submitting job done.\n".format(scriptName))
+                inputData = GangaDataset(treat_as_inputfiles=False, files=[f for f in l])
 
-            #queues.add(j.submit)
-        except:
-            print ("[{0}] --- Failed to submit job ".format(scriptName))
-            raise
+                print ('\n\ninputDataType:\n', type(inputData))
+                print ('\n\ninputData:\n', inputData)
+                for item in inputData:
+                    print (type(item))
+                    print (item)
+
+                j = createJob(executable='run_marlin.py', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
+                j.comment = "Streamout " + conf.runPeriod
+                j.outputfiles = [MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')]
+                j.inputfiles = inputFiles
+                j.inputdata = inputData
+
+                # Save job as txtfile locally
+                # export(jobs(j.id), 'my_job.txt')
+
+                jobtree.add(j)            
+                j.submit()
+                print ("\n[{0}] ... submitting job done.\n".format(scriptName))
+
+                #queues.add(j.submit)
+            except:
+                print ("[{0}] --- Failed to submit job ".format(scriptName))
+                raise
 ###
 
 
