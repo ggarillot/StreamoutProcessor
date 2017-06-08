@@ -234,6 +234,9 @@ streamoutProc.SkipFullAsic = True # Skip asic with all 64 channels lit up
 
 
 streamoutProc.CerenkovDifId = 3 # Since May2015
+streamoutProc.CerenkovOutDifId = 3
+streamoutProc.CerenkovOutAsicId = 1
+streamoutProc.CerenkovOutTimeDelay = 6
 streamoutProc.Before2016Data = True # Bool for Ecal data detection (change in data format in 2016)
 
 if runPeriod.find("2012") != -1:

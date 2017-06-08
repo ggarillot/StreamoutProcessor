@@ -16,9 +16,12 @@
     <parameter name="ROOTOutputFile" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Streamout/DHCAL_728603_SO_TAIS.root</parameter>
     <parameter name="PlotFolder" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Plots</parameter>
     <parameter name="RU_SHIFT" type="int">23</parameter>
+    <parameter name="DropFirstRU" type="bool">False</parameter>
     <parameter name="XDAQ_SHIFT" type="int">24</parameter>
     <parameter name="CerenkovDifId" type="int">3</parameter>
-    <parameter name="DropFirstRU" type="bool">False</parameter>
+    <parameter name="CerenkovOutDifId" type="int">3</parameter>
+    <parameter name="CerenkovOutAsicId" type="int">1</parameter>
+    <parameter name="CerenkovOutTimeDelay" type="int">6</parameter>
     <parameter name="SkipFullAsic" type="bool">True</parameter>
     <parameter name="Before2016Data" type="bool">True</parameter>
     <parameter name="TreatEcal" type="bool">False</parameter>
