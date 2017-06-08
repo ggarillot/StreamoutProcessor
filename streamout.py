@@ -426,6 +426,7 @@ def main():
                     print (item)
 
                 j = createJob(executable='run_marlin.py', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
+                # j = createJob(executable='runStreamout.sh', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
                 j.comment = "Streamout " + conf.runPeriod
                 j.outputfiles = [MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')]
                 j.inputfiles = inputFiles
