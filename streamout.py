@@ -17,7 +17,11 @@ import shlex # split properly command line for Popen
 from marlin import Marlin # if error importing it move streamout.py to same folder
 # from lxml import etree
 import yaml
-from ganga import *
+try:
+    import ganga
+except ImportError :
+    print("Ganga not found on system, won't run on grid")
+
 
 # Import default config file
 # Not needed here just for dumb editor not to complain about config not existing
@@ -188,7 +192,8 @@ def createJob(executable, args = [], name='', comment='', backend='Local', backe
         try:
             gridProxy.voms = voms
         except NameError: # ganga > 6.3 no longer has the gridProxy credentials system
-            j.backend.credential_requirements = VomsProxy(vo=voms)
+            print("using new cred system")
+            # j.backend.credential_requirements = VomsProxy(vo=voms)
     return j
 
 
@@ -277,8 +282,8 @@ def main():
                     scp(runNumber, conf.serverName, conf.serverPath, conf.inputPath)
                 except :
                     raise("[{0}] - Something wrong happened while downloading with scp".format(scriptName))
-            else :
-                sys.exit('Exiting') 
+            # else :
+                # sys.exit('Exiting') 
         print ('OK')
 
         # Check if more/less files available than asked by the user
@@ -430,10 +435,10 @@ def main():
                 # export(jobs(j.id), 'my_job.txt')
 
                 jobtree.add(j)            
+                # queues.add(j.submit)
                 j.submit()
                 print ("\n[{0}] ... submitting job done.\n".format(scriptName))
 
-                #queues.add(j.submit)
             except:
                 print ("[{0}] --- Failed to submit job ".format(scriptName))
                 raise
