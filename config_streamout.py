@@ -44,7 +44,7 @@
 ''' ------------------------- complete SPS_10_2015 runList ------------------------- '''
 # runList = [ 730489, 730490, 730491, 730497, 730502, 730504, 730505, 730509, 730511, 730516, 730518, 730522, 730526, 730533, 730540, 730545, 730548, 730552, 730563, 730566, 730567, 730568, 730569, 730578, 730581, 730582, 730583, 730584, 730605, 730607, 730609, 730611, 730615, 730616, 730617, 730618, 730619, 730620, 730621, 730622, 730623, 730625, 730626, 730627, 730630, 730631, 730633, 730634, 730648, 730651, 730655, 730656, 730657, 730658, 730659, 730661, 730668, 730672, 730673, 730676, 730677, 730678, 730705, 730709, 730713, 730716, 730752, 730756, 730790, 730804, 730816, 730819, 730821, 730823, 730824, 730842, 730844, 730846, 730847, 730851, 730858, 730861, 730882, 730884, 730886, 730888, 730903, 730909, 730914, 730915, 730917, 730920, 730923 ]
 # 730490
-runList = [ 730490 ] #027
+# runList = [ 730490 ] #027
 # 730678, 730705, 730709, 730713] OK 
 # runList = [ 730824, 730842, 730844, 730846, 730847] OK
 # runList = [ 730851, 730858, 730861, 730882, 730884, 730886] OK
@@ -83,12 +83,13 @@ runList = [ 730490 ] #027
 # runList=[730655, 730668, 730677, 730709, 730713] # SPS_10_2015
 # runList =[733728] # SPS_10_2016
 
-
+''' ------------------------- H2 09 2017 -------------------------''' 
+runList=[736496]
 ####################
 ### Grid Section
 ####################
-runOnGrid = True
-# runOnGrid = False
+# runOnGrid = True
+runOnGrid = False
 backend = 'Local'
 # backend = 'CREAM'
 # backend = 'LSF'
@@ -125,9 +126,9 @@ gridInputFiles = []
 ####################
 ### Global variables
 ####################
-ilcSoftVersion = "v01-19-01"
+ilcSoftVersion = "v01-19-04"
 # ilcSoftVersion = "v01-17-09"
-ilcSoftPath = "/opt/ilcsoft/"
+ilcSoftPath = "/home/acqilc/ilcsoft/"
 if runOnGrid is True:
     ilcSoftPath = gridIlcSoftPath
 initILCSoftScript = ilcSoftPath + ilcSoftVersion + "/init_ilcsoft.sh"
@@ -137,15 +138,16 @@ marlinCfgFile = "marlinCfg_{0}.yml" #.format(runNumber) cfgFile name written by 
 # runPeriod = "SPS_12_2014"
 # runPeriod = "SPS_04_2015"
 # runPeriod = "PS_06_2015"
-runPeriod = "SPS_10_2015"
+# runPeriod = "SPS_10_2015"
 # runPeriod = "SPS_06_2016"
-# runPeriod = "SPS_10_2016"
+runPeriod = "SPS_10_2016"
 
 # General Path to find/store data: the following assumes that all data is in a subfolder of dataPath
 # Overwritten by gridDataPath if runOnGrid is True
 # dataPath = "/Users/antoine/CALICE/DataAnalysis/data"
-dataPath = "/Volumes/PagosDisk/CALICE/data/%s" % runPeriod # Local
-gridDataPath = eos_home + 'Data/' + runPeriod 
+# dataPath = "/home/acqilc/dqmsoftware/SDHCAL/SDHCAL_EventReader/python/" # Local
+dataPath = "/data/NAS/H2SEPT2017/" # Local
+gridDataPath = eos_home + 'Data/' + runPeriod
 # dataPath = "/scracth/SDHCAL/data/%s" % runPeriod # Lyoserv
 # dataPath = "/eos/users/a/apingaul/CALICE/Data%s" % runPeriod # Lxplus
 
@@ -155,17 +157,18 @@ if runOnGrid is True:
 print "runOnGrid: {0}".format(runOnGrid)
 print "dataPath: {0}".format(dataPath)
 
-inputPath = "%s/Raw" % dataPath
-outputPath = "%s/Streamout" % dataPath
-plotPath = "%s/Plots" % dataPath
-logPath = "%s/Logs" % dataPath
+# inputPath = "%s/Raw" % dataPath
+inputPath = dataPath
+outputPath = "/home/acqilc/antoine/StreamoutProcessor"
+plotPath = outputPath
+logPath = outputPath
 
 logFile = "{0}/streamLog_{1}" # % (logPath, runNumber)
 inputFile = "{0}/DHCAL_{1}_I0_{2}.slcio" # % (inputPath, runNumber, streamoutFileNumber)
 outputFile = "{0}/DHCAL_{1}_SO_Antoine" # extension slcio/root added in script # % (outputPath,runNumber)
 # outputFile = "{0}/DHCAL_{1}_SO_CerDebug" # extension slcio/root added in script # % (outputPath,runNumber)
 
-processorPath = "/eos/user/a/apingaul/CALICE/Software/Streamout"
+processorPath = "/home/acqilc/antoine/StreamoutProcessor"
 if runOnGrid is True:
     processorPath = gridProcessorPath
 xmlFile = "{0}/StreamoutProcessor.xml".format(processorPath) # Path to XML file

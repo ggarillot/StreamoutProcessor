@@ -438,11 +438,11 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
           difId = m_cerenkovOutDifId;
           if (asicId != m_cerenkovOutAsicId)                       // bug in firmware when two signals are plugged in the BIF
           {
-            streamlog_out(MESSAGE) << " BIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
-                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+            // streamlog_out(MESSAGE) << " BIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+            //                        << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
             asicId = asicId & m_cerenkovOutAsicId;
-            streamlog_out(MESSAGE) << " NEWBIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
-                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+            // streamlog_out(MESSAGE) << " NEWBIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+            //                        << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
             if (asicId != m_cerenkovOutAsicId)
             {
               streamlog_out(ERROR) << " Found a weird asicId for Cerenkov: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
