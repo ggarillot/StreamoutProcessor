@@ -36,7 +36,7 @@
 
 unsigned long long DIFUnpacker::GrayToBin(unsigned long long n)
 {
-  unsigned long long ish, ans, idiv, ishmax;
+  unsigned long long ish, ans, ishmax;
 
   ishmax = sizeof(unsigned long long) * 8;
   ish    = 1;
@@ -44,7 +44,7 @@ unsigned long long DIFUnpacker::GrayToBin(unsigned long long n)
 
   while (true)
   {
-    idiv = ans >> ish;
+    unsigned long long idiv = ans >> ish;
     ans ^= idiv;
     if ((idiv <= 1) || (ish == ishmax))
     {
@@ -210,9 +210,7 @@ bool DIFUnpacker::getFramePAD(unsigned char *framePtr, uint32_t ip)
 
 uint8_t DIFUnpacker::getFrameData(unsigned char *framePtr, uint32_t ip)
 {
-  uint8_t *iframe = (uint8_t *)&framePtr[DU_FRAME_DATA_SHIFT];
-
-  iframe = (uint8_t *)&framePtr[0];
+  uint8_t * iframe = (uint8_t *)&framePtr[0];
   return(iframe[ip]);
 }
 
@@ -291,17 +289,17 @@ uint32_t DIFUnpacker::getFramePtr(std::vector<unsigned char *>& vFrame, std::vec
 
   if (cb[fshift] != DU_START_OF_FRAME)
   {
-    printf("\n[DIFUnpacker::getFramePtr] - ERROR : DIF %d : This is not a start of frame shift= %d value = %02x \n", getID(cb), fshift, cb[fshift]);
+    printf("\n[DIFUnpacker::getFramePtr] - ERROR : DIF %x : This is not a start of frame shift= %x value = %02x \n", getID(cb), fshift, cb[fshift]);
 
-    printf("fshift %d/%d \n", fshift, max_size);
+    printf("fshift %x/%x \n", fshift, max_size);
     printf("fshift:\t");
     for (uint32_t i = 0; i < 10; ++i)
     {
-      printf(" %d ", i);
+      printf(" %x ", i);
     }
     for (uint32_t i = 10; i < 40; ++i)
     {
-      printf("%d ", i);
+      printf("%x ", i);
     }
     printf("\n");
     printf("value:\t");
@@ -315,12 +313,12 @@ uint32_t DIFUnpacker::getFramePtr(std::vector<unsigned char *>& vFrame, std::vec
     {
       if ((cb[i] == DU_END_OF_DIF) || (cb[i] == DU_END_OF_FRAME) || (cb[i] == DU_START_OF_DIF) || (cb[i] == DU_START_OF_FRAME))
       {
-        printf("\n - cb[%d]: %02x\n", i, cb[i]);
+        printf("\n - cb[%x]: %02x\n", i, cb[i]);
       }
     }
 
     uint i = fshift;
-    while (cb[i] != DU_END_OF_DIF && i < max_size)
+    while (i < max_size && cb[i] != DU_END_OF_DIF )
     {
       if ((cb[i] == DU_END_OF_FRAME) || (cb[i] == DU_START_OF_DIF) || (cb[i] == DU_START_OF_FRAME))
       {
@@ -370,11 +368,11 @@ uint32_t DIFUnpacker::getFramePtr(std::vector<unsigned char *>& vFrame, std::vec
       printf("fshift:\t");
       for (uint32_t i = 0; i < 10; ++i)
       {
-        printf(" %d ", i);
+        printf(" %x ", i);
       }
       for (uint32_t i = 10; i < 2 * fshift + 1; ++i)
       {
-        printf("%d ", i);
+        printf("%x ", i);
       }
 
       printf("\nvalue:\t");
@@ -395,7 +393,7 @@ uint32_t DIFUnpacker::getFramePtr(std::vector<unsigned char *>& vFrame, std::vec
 
     if (fshift > max_size)
     {
-      printf("fshift %d exceed %d \n", fshift, max_size);
+      printf("fshift %x exceed %x \n", fshift, max_size);
       return fshift;
     }
 
@@ -447,15 +445,15 @@ uint32_t DIFUnpacker::getFramePtrPrint(std::vector<unsigned char *>& vFrame, std
 //}
   if (cb[fshift] != DU_START_OF_FRAME)
   {
-    printf("[DIFUnpacker::getFramePtrPrint] - ERROR: This is not a start of frame shift= %d value = %02x \n", fshift, cb[fshift]);
+    printf("[DIFUnpacker::getFramePtrPrint] - ERROR: This is not a start of frame shift= %x value = %02x \n", fshift, cb[fshift]);
     printf("fshift:\t");
     for (uint32_t i = 0; i < 10; ++i)
     {
-      printf(" %d ", i);
+      printf(" %x ", i);
     }
     for (uint32_t i = 10; i < fshift + 1; ++i)
     {
-      printf("%d ", i);
+      printf("%x ", i);
     }
 
     printf("\nvalue:\t");
@@ -471,7 +469,7 @@ uint32_t DIFUnpacker::getFramePtrPrint(std::vector<unsigned char *>& vFrame, std
 
   do
   {
-    printf("fshift %d/%d \n", fshift, max_size);
+    printf("fshift %x/%x \n", fshift, max_size);
     if (cb[fshift] == DU_END_OF_DIF)
     {
       printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x ---> endDIF. Found %lu frames\n", cb[fshift], vFrame.size());
@@ -523,7 +521,7 @@ uint32_t DIFUnpacker::getFramePtrPrint(std::vector<unsigned char *>& vFrame, std
 
     if (fshift > max_size)
     {
-      printf("fshift %d exceed %d \n", fshift, max_size);
+      printf("fshift %x exceed %x \n", fshift, max_size);
       return fshift;
     }
 

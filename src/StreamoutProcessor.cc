@@ -474,8 +474,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         pRawCalorimeterHit->setCellID0(id0);
         pRawCalorimeterHit->setCellID1(id1);
         pRawCalorimeterHit->setAmplitude(amplitudeBitSet.to_ulong());
-	unsigned long int TTT = (unsigned long int)(pDifPtr->getFrameTimeToTrigger(f));
-        pRawCalorimeterHit->setTimeStamp(TTT);
+        pRawCalorimeterHit->setTimeStamp(timeStamp);
 
 
 
