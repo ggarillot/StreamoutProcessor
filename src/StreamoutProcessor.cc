@@ -465,9 +465,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         // cell id 1
         id1 = (unsigned long int)(frameTime);
 
-        amplitudeBitSet[0] = pDifPtr->getFrameLevel(f, ch, 0);
-        amplitudeBitSet[1] = pDifPtr->getFrameLevel(f, ch, 1);
-        amplitudeBitSet[2] = isSynchronised;
+        amplitudeBitSet.set(0, pDifPtr->getFrameLevel(f, ch, 0));
+        amplitudeBitSet.set(1, pDifPtr->getFrameLevel(f, ch, 1));
+        amplitudeBitSet.set(2, isSynchronised);
 
         IMPL::RawCalorimeterHitImpl *pRawCalorimeterHit = new IMPL::RawCalorimeterHitImpl();
 
