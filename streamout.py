@@ -341,8 +341,11 @@ def main():
             print ('[{0}] --- Running Marlin...'.format(scriptName))
             print ("[{0}] --- Ouput is logged to '{1}'".format(scriptName, log))
             beginTime = time.time()
-            # subprocess.call(['python', 'run_marlin.py', marlinCfgFile])
-            subprocess.call(['python', 'run_marlin.py', marlinCfgFile], stdout=log, stderr=log)
+            if conf.logToFile is True:
+                subprocess.call(['python', 'run_marlin.py', marlinCfgFile], stdout=log, stderr=log)
+            else:
+                subprocess.call(['python', 'run_marlin.py', marlinCfgFile])
+
             print ('[{0}] - Running Marlin...OK - '.format(scriptName), end='')
             try:
                 elapsedTime(beginTime)

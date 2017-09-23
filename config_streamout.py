@@ -130,6 +130,7 @@ gridInputFiles = []
 ####################
 ### Global variables
 ####################
+logToFile = False
 ilcSoftVersion = "v01-19-01"
 # ilcSoftVersion = "v01-17-09"
 ilcSoftPath = "/opt/ilcsoft/"
