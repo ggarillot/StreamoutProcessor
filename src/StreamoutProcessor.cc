@@ -42,62 +42,69 @@ public:
 
 StreamoutProcessor aStreamoutProcessor ;
 
-StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
-
-  // modify processor description
-  m_processorDescription = "Create a RawCalorimeterHit collection from a LCGenericObject* collection of sdhcal raw dif buffers" ;
-
-  m_inputCollectionName = "RU_XDAQ";
+StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor"),
+m_nRun(0),
+m_nEvt(0),
+m_eventNbr(0),
+m_ruShift(23),
+m_cerenkovDifId(3),
+m_cerenkovOutDifId(3),
+m_cerenkovOutAsicId(1),
+m_cerenkovOutTimeDelay(6),
+m_xdaqShift(24),
+m_dropFirstRU(false),
+m_skipFullAsics(true),
+m_isBefore2016Data(false),
+m_shouldTreatEcal(false),
+m_processorDescription("Create a RawCalorimeterHit collection from a LCGenericObject* collection of sdhcal raw dif buffers"),
+m_inputCollectionName("RU_XDAQ"),
+m_outputCollectionName("DHCALRawHits"),
+m_outputFileName("StreamoutProcessorOutput.slcio"),
+m_pLCStreamoutWriter(nullptr),
+m_rootFile(nullptr)
+{
   registerInputCollection( LCIO::LCGENERICOBJECT,
                            "InputCollectionName",
                            "RU_XDAQ Collection Name",
                            m_inputCollectionName,
                            m_outputCollectionName);
 
-  m_outputCollectionName = "DHCALRawHits";
   registerOutputCollection( LCIO::RAWCALORIMETERHIT,
-                            "OutputCollectionName" ,
+                            "OutputCollectionName",
                             "RawCaloHit Collection Name",
                             m_outputCollectionName,
                             m_outputCollectionName);
 
-  m_outputFileName = "StreamoutProcessorOutput.slcio";
   registerProcessorParameter("LCIOOutputFile",
                              "LCIO file",
                              m_outputFileName,
                              m_outputFileName);
 
-  m_ruShift = 23;
   registerProcessorParameter("RU_SHIFT",
                              "Byte shift for raw data reading",
                              m_ruShift,
                              m_ruShift);
 
-  m_xdaqShift = 24;
   registerProcessorParameter("XDAQ_SHIFT",
                              "XDAQ Byte shift for raw data reading",
                              m_xdaqShift,
                              m_xdaqShift);
 
-  m_dropFirstRU = false;
   registerProcessorParameter("DropFirstRU",
                              "Drop first Trigger event (bool)",
                              m_dropFirstRU,
                              m_dropFirstRU);
 
-  m_skipFullAsics = true;
   registerProcessorParameter("SkipFullAsic",
                              "Skip full Asic event (bool)",
                              m_skipFullAsics,
                              m_skipFullAsics);
 
-  m_isBefore2016Data = false;
   registerProcessorParameter("Before2016Data",
                              "Header of raw data was modified in 2016 to account for combined test beam",
                              m_isBefore2016Data,
                              m_isBefore2016Data);
 
-  m_shouldTreatEcal = false;
   registerProcessorParameter("TreatEcal",
                              "Treat Ecal data (bool)",
                              m_shouldTreatEcal,
@@ -109,27 +116,23 @@ StreamoutProcessor::StreamoutProcessor() : Processor("StreamoutProcessor") {
                              m_ecalDetectorIds,
                              ecalDetectorIds);
 
-  m_cerenkovDifId = 3;
   registerProcessorParameter("CerenkovDifId",
                              "DifID number for the Cerenkov signal",
                              m_cerenkovDifId,
                              m_cerenkovDifId);
 
   // Cerenkov data format in RawCaloHit
-  m_cerenkovOutDifId = 3;
   registerProcessorParameter("CerenkovOutDifId",
                              "DifID number for the Cerenkov signal after reconstruction",
                              m_cerenkovOutDifId,
                              m_cerenkovOutDifId);
 
-  m_cerenkovOutAsicId = 1;
   registerProcessorParameter("CerenkovOutAsicId",
                              "AsicID number for the Cerenkov signal after reconstruction",
                              m_cerenkovOutAsicId,
                              m_cerenkovOutAsicId);
 
 // TODO: Not changing TimeDelay for now... ( Cannot just force the time of the hit : Need to shift the time for each cerenkov hit otherwise we won't be able to remove noise hit that arrives at different time)
-  m_cerenkovOutTimeDelay = 6;
   registerProcessorParameter("CerenkovOutTimeDelay",
                              "Time delay between physics event and cerenkov signal",
                              m_cerenkovOutTimeDelay,

@@ -472,7 +472,7 @@ uint32_t DIFUnpacker::getFramePtrPrint(std::vector<unsigned char *>& vFrame, std
     printf("fshift %x/%x \n", fshift, max_size);
     if (cb[fshift] == DU_END_OF_DIF)
     {
-      printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x ---> endDIF. Found %lu frames\n", cb[fshift], vFrame.size());
+      printf("[DIFUnpacker::getFramePtrPrint] - DEBUG : %x ---> endDIF. Found %zu frames\n", cb[fshift], vFrame.size());
       return fshift;
     }
 
