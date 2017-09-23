@@ -347,7 +347,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     }
 
     if ( 0 != cerTagFrameLevel[0] || 0 != cerTagFrameLevel[1])
-      streamlog_out( MESSAGE )  << " - TagFrameLevel0 : " << cerTagFrameLevel[0] << " / TagFrameLevel1 : " << cerTagFrameLevel[1] << std::endl;
+      streamlog_out( DEBUG )  << " - TagFrameLevel0 : " << cerTagFrameLevel[0] << " / TagFrameLevel1 : " << cerTagFrameLevel[1] << std::endl;
 
     // pRawCalorimeterHitCollection->parameters().setValues("CerTagFrameLevel", cerTagFrameLevel);
 
@@ -436,19 +436,19 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         if (difId == m_cerenkovDifId)
         {
           difId = m_cerenkovOutDifId;
-          if (asicId != m_cerenkovOutAsicId)                       // bug in firmware when two signals are plugged in the BIF
-          {
-            streamlog_out(MESSAGE) << " BIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
-                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
-            asicId = asicId & m_cerenkovOutAsicId;
-            streamlog_out(MESSAGE) << " NEWBIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
-                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
-            if (asicId != m_cerenkovOutAsicId)
-            {
-              streamlog_out(ERROR) << " Found a weird asicId for Cerenkov: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
-                                   << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
-            }
-          }
+          // if (asicId != m_cerenkovOutAsicId)                       // bug in firmware when two signals are plugged in the BIF
+          // {
+          //   streamlog_out(MESSAGE) << " BIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+          //                          << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+          //   asicId = asicId & m_cerenkovOutAsicId;
+          //   streamlog_out(MESSAGE) << " NEWBIF: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+          //                          << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+          //   if (asicId != m_cerenkovOutAsicId)
+          //   {
+          //     streamlog_out(ERROR) << " Found a weird asicId for Cerenkov: Dif/Asic/Chan/TimeToTrigger/bcid: " << difId << "/"
+          //                          << asicId << "/" << chanId << "/" << timeStamp << "/" << frameTime << std::endl;
+          //   }
+          // }
         }
 
         // 8 firsts bits: DIF Id
@@ -535,8 +535,6 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   }
 
   streamlog_out( DEBUG ) << " Number of hits in event '" << pLCEvent->getEventNumber() << "' : " << pRawCalorimeterHitCollection->getNumberOfElements() << std::endl;
-  std::cout << pLCEvent->getEventNumber() << " Number of Hit BiBitch" << pRawCalorimeterHitCollection->getNumberOfElements() << std::endl;
-
   // add the collection to event
   IMPL::LCEventImpl * pOutLCEvent = new IMPL::LCEventImpl();
   pOutLCEvent->setRunNumber (pLCEvent->getRunNumber());
@@ -587,7 +585,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     return;
   }
   m_nEvt ++ ;
-  streamlog_out( ERROR ) << "Event processed : " << m_nEvt << std::endl;
+  streamlog_out( DEBUG ) << "Event processed : " << m_nEvt << std::endl;
   delete pRawCalorimeterHitCollection;
 }
 
