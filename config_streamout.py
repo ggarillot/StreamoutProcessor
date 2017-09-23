@@ -44,7 +44,7 @@
 ''' ------------------------- complete SPS_10_2015 runList ------------------------- '''
 # runList = [ 730489, 730490, 730491, 730497, 730502, 730504, 730505, 730509, 730511, 730516, 730518, 730522, 730526, 730533, 730540, 730545, 730548, 730552, 730563, 730566, 730567, 730568, 730569, 730578, 730581, 730582, 730583, 730584, 730605, 730607, 730609, 730611, 730615, 730616, 730617, 730618, 730619, 730620, 730621, 730622, 730623, 730625, 730626, 730627, 730630, 730631, 730633, 730634, 730648, 730651, 730655, 730656, 730657, 730658, 730659, 730661, 730668, 730672, 730673, 730676, 730677, 730678, 730705, 730709, 730713, 730716, 730752, 730756, 730790, 730804, 730816, 730819, 730821, 730823, 730824, 730842, 730844, 730846, 730847, 730851, 730858, 730861, 730882, 730884, 730886, 730888, 730903, 730909, 730914, 730915, 730917, 730920, 730923 ]
 # 730490
-runList = [ 730490 ] #027
+# runList = [ 730490 ] #027
 # 730678, 730705, 730709, 730713] OK 
 # runList = [ 730824, 730842, 730844, 730846, 730847] OK
 # runList = [ 730851, 730858, 730861, 730882, 730884, 730886] OK
@@ -74,7 +74,12 @@ runList = [ 730490 ] #027
 
 
 
+''' ------------------------- SPS_09_2017 ------------------------- '''
+# Calo displacement scan
+# runList = [736572,736571,736570,736569,736568,736567,736566,736565,736564,736563,736562,736561,736560,736559,736558,736557,736556,736554,736545,736544,736543,736542,736541,736540,736539,736538,736537,736536,736535,736533,736532,736531,736530,736529]
 
+# Normal scan
+runList = [736522, 736520, 736519, 736517, 736513]
 
 ''' ------------------------- CERENKOV DEBUGGING -------------------------'''
 # runList=[726411] # SPS_12_2014
@@ -137,9 +142,10 @@ marlinCfgFile = "marlinCfg_{0}.yml" #.format(runNumber) cfgFile name written by 
 # runPeriod = "SPS_12_2014"
 # runPeriod = "SPS_04_2015"
 # runPeriod = "PS_06_2015"
-runPeriod = "SPS_10_2015"
+# runPeriod = "SPS_10_2015"
 # runPeriod = "SPS_06_2016"
 # runPeriod = "SPS_10_2016"
+runPeriod = "SPS_09_2017"
 
 # General Path to find/store data: the following assumes that all data is in a subfolder of dataPath
 # Overwritten by gridDataPath if runOnGrid is True
@@ -177,13 +183,14 @@ if runOnGrid is True:
     gridInputFiles.append(gridProcessorPath + 'marlin.py')
     # gridInputFiles.append(marlinCfgFile)
 
+runOnGrid = False
 
 ####################
 ### Scp section for autoDownload before running
 ####################
 # If file not available, use serverName to scp it from.
-# serverName = 'lyoac29'
-serverName = 'lyoac30'
+serverName = 'lyoac29'
+# serverName = 'lyoac30'
 # serverName = 'lyosdhcal10'
 # serverName = 'lyosdhcal12'
 
@@ -200,6 +207,8 @@ if runPeriod == 'SPS_06_2016':
     serverDataPath = '/data/NAS/June2016/'
 if runPeriod == 'SPS_10_2016':
     serverDataPath = '/data/NAS/Oct2016/'
+if runPeriod == 'SPS_09_2017':
+    serverDataPath = '/data/NAS/H2SEPT2017/'
 
 
 ####################
@@ -237,7 +246,8 @@ streamoutProc.CerenkovDifId = 3 # Since May2015
 streamoutProc.CerenkovOutDifId = 3
 streamoutProc.CerenkovOutAsicId = 1
 streamoutProc.CerenkovOutTimeDelay = 6
-streamoutProc.Before2016Data = True # Bool for Ecal data detection (change in data format in 2016)
+
+streamoutProc.Before2016Data = True # Bool for Ecal data detection (change in data format in 2016) Overriden in the following lines
 
 if runPeriod.find("2012") != -1:
     streamoutProc.XDAQ_SHIFT = 92 #? 2012
@@ -249,7 +259,7 @@ elif runPeriod.find("2014") != -1:
 elif runPeriod.find("2015") != -1:
     streamoutProc.XDAQ_SHIFT = 24 # 2014-2015
     
-elif runPeriod.find("2016") != -1:
+elif runPeriod.find("2016") != -1 or runPeriod.find("2017") != -1:
     streamoutProc.XDAQ_SHIFT = 20 # Since June2016
     streamoutProc.Before2016Data = False # Bool for Ecal data detection
     streamoutProc.TreatEcal = False

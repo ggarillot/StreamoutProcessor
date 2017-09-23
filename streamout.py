@@ -165,8 +165,11 @@ def checkPeriod(runNumber, runPeriod, configFile):
     if runNumber >= '730927' and runNumber <= '732909' and runPeriod != 'SPS_06_2016':
         sys.exit(periodError('SPS_06_2016'))
 
-    if runNumber >= '734927' and runPeriod != 'SPS_10_2016':
+    if runNumber >= '733626' and runNumber <= '733759' and runPeriod != 'SPS_10_2016':
         sys.exit(periodError('SPS_10_2016'))
+
+    if runNumber >= '736500' and runNumber <= '736575' and runPeriod != 'SPS_09_2017':
+        sys.exit(periodError('SPS_09_2017'))
 
 # -----------------------------------------------------------------------------
 def scp(runNumber, serverName, serverPath, localPath):
