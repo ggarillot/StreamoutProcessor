@@ -138,7 +138,7 @@ DIFPtr(unsigned char* p,uint32_t max_size) : theSize_(max_size),theDIF_(p)
   {
       DIFUnpacker::getFramePtr(theFrames_,theLines_,theSize_,theDIF_);
   }
-  catch (std::string e)
+  catch (std::string &e)
   {
     std::cout<<" Exception: DIF "<<getID()<<" T ? "<<hasTemperature()<<" " <<e<<std::endl;
   }
@@ -196,7 +196,7 @@ inline uint32_t getFrameData(uint32_t i,uint32_t iword){return DIFUnpacker::getF
 
 void dumpDIFInfo()
 {
-  printf("DIF %d DTC %d GTC %d ABCID %lld BCID %d Lines %d Temperature %d \n",
+  printf("DIF %d DTC %d GTC %d ABCID %llu BCID %d Lines %d Temperature %d \n",
    getID(),
    getDTC(),
    getGTC(),

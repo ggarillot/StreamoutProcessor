@@ -33,7 +33,7 @@
 class LCStreamoutWriter
 {
 public:
-  LCStreamoutWriter(const std::string &outputFileName) :
+  explicit LCStreamoutWriter(const std::string &outputFileName) :
     m_nProcessedEvent(0)
   {
     m_pLCWriter = IOIMPL::LCFactory::getInstance()->createLCWriter();
@@ -136,9 +136,9 @@ protected:
 private:
   int                m_ruShift;
   int                m_cerenkovDifId;
-  int m_cerenkovOutDifId;
-  int m_cerenkovOutAsicId;
-  int m_cerenkovOutTimeDelay;
+  int                m_cerenkovOutDifId;
+  int                m_cerenkovOutAsicId;
+  int                m_cerenkovOutTimeDelay;
   int                m_xdaqShift;
   bool               m_dropFirstRU;
   bool               m_skipFullAsics;
@@ -146,7 +146,7 @@ private:
   bool               m_shouldTreatEcal;
   std::vector<int>   m_ecalDetectorIds;
   std::string        m_runNumber;
-  bool               m_drawPlots;
+  // bool               m_drawPlots;
   std::string        m_plotFolder;
 
   std::string        m_processorDescription;

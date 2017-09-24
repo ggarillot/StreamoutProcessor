@@ -131,35 +131,35 @@ void DIFSlowControl::FillAsicHR1(std::bitset<72*8> &bs)
 {
 // Asic Id
 int asicid=0;
-for (int j=0;j<8;j++) if (bs[j+9]!=0) asicid += (1<<(7-j));
+for (int j=0;j<8;j++) if (bs.test(j+9) != 0) asicid += (1<<(7-j));
 char Name[256];
 
 std::map<std::string,int> mAsic;
 
 // Slow Control
-mAsic["SSC0"]=(int)  bs[575];
-mAsic["SSC1"]=(int) bs[574];
-mAsic["SSC2"]=(int) bs[573];
-mAsic["Choix_caisson"]=(int) bs[572];
-mAsic["SW_50k"]=(int) 	bs[571];
-mAsic["SW_100k"]=(int) bs[570];
-mAsic["SW_100f"]=(int) bs[569];
-mAsic["SW_50f"]=(int) 	bs[568];
+mAsic["SSC0"]= bs.test(575);
+mAsic["SSC1"] = bs.test(574);
+mAsic["SSC2"] = bs.test(573);
+mAsic["Choix_caisson"] = bs.test(572);
+mAsic["SW_50k"]= bs.test(571);
+mAsic["SW_100k"] = bs.test(570);
+mAsic["SW_100f"] = bs.test(569);
+mAsic["SW_50f"]= bs.test(568);
 
-mAsic["Valid_DC"]=(int)  bs[567];
-mAsic["ON_Discri"]=(int) bs[566];
-mAsic["ON_Fsb"]=(int) 	bs[565];
-mAsic["ON_Otaq"]=(int) bs[564];
-mAsic["ON_W"]=(int) bs[563];
-mAsic["ON_Ss"]=(int) bs[562];
-mAsic["ON_Buf"]=(int) bs[561];
-mAsic["ON_Paf"]=(int) bs[560];
+mAsic["Valid_DC"]= bs.test(567);
+mAsic["ON_Discri"] = bs.test(566);
+mAsic["ON_Fsb"]= bs.test(565);
+mAsic["ON_Otaq"] = bs.test(564);
+mAsic["ON_W"] = bs.test(563);
+mAsic["ON_Ss"] = bs.test(562);
+mAsic["ON_Buf"] = bs.test(561);
+mAsic["ON_Paf"] = bs.test(560);
 // Gain
 int Gain[64];
 for(int i=0;i<64;i++)
   {
     Gain[i]=0;
-    for (int j=0;j<6;j++) if (bs[176+i*6+j]!=0) Gain[i]+= (1<<j);
+    for (int j=0;j<6;j++) if (bs.test(176+i*6+j)!=0) Gain[i]+= (1<<j);
     sprintf(Name,"Channel_%i_",i);
     std::string name(Name);
     mAsic[(name+"Gain")]=Gain[i];
@@ -169,28 +169,28 @@ for(int i=0;i<64;i++)
 int cTest[64];
 for(int i=0;i<64;i++)
   {
-    cTest[i]=bs[112+i];
+    cTest[i]=bs.test(112+i);
     sprintf(Name,"Channel_%i_",i);
     std::string name(Name);
     mAsic[(name+"cTest")]=cTest[i];
 
   }
 
-mAsic["ON_Otabg"]=(int)  bs[111];
-mAsic["ON_Dac"]=(int) 	bs[110];
-mAsic["ON_Otadac"]=(int)  bs[109];
+mAsic["ON_Otabg"]= bs.test(111);
+mAsic["ON_Dac"]=bs.test(110);
+mAsic["ON_Otadac"]= bs.test(109);
 // DAC
 int dac1=0;
-for (int j=0;j<10;j++) if (bs[j+99]!=0) dac1+= (1<<j);
+for (int j=0;j<10;j++) if (bs.test(j+99)!=0) dac1+= (1<<j);
 mAsic["DAC1"]=dac1;
 int dac0=0;
-for (int j=0;j<10;j++) if (bs[j+89]!=0) dac0+= (1<<j);
+for (int j=0;j<10;j++) if (bs.test(j+89)!=0) dac0+= (1<<j);
 mAsic["DAC0"]=dac0;
 // Valid
 int Valid_trig[64];
 for (int j=0;j<64;j++)
   {
-    Valid_trig[j]=(int) bs[25+j];
+    Valid_trig[j]= bs.test(25+j);
     sprintf(Name,"Channel_%i_",j);
     std::string name(Name);
     mAsic[(name+"Valid_trig")]=Valid_trig[j];
@@ -199,21 +199,21 @@ for (int j=0;j<64;j++)
 
 
 
-mAsic["EN_Raz_Ext"]=(int)  bs[23];
-mAsic["EN_Raz_Int"]=(int) bs[22];
-mAsic["EN_Out_Raz_Int"]=(int) bs[21];
-mAsic["EN_Trig_Ext"]=(int) bs[20];
-mAsic["EN_Trig_Int"]=(int) bs[19];
-mAsic["EN_Out_Trig_Int"]=(int)  bs[18];
-mAsic["Bypass_Chip"]=(int) bs[17];
+mAsic["EN_Raz_Ext"]= bs.test(23);
+mAsic["EN_Raz_Int"]= bs.test(22);
+mAsic["EN_Out_Raz_Int"]= bs.test(21);
+mAsic["EN_Trig_Ext"]= bs.test(20);
+mAsic["EN_Trig_Int"]= bs.test(19);
+mAsic["EN_Out_Trig_Int"]= bs.test(18);
+mAsic["Bypass_Chip"]= bs.test(17);
 
 mAsic["HardrocHeader"]=(int) asicid;
 
-mAsic["EN_Out_Discri"]=(int)  bs[8];
+mAsic["EN_Out_Discri"]= bs.test(8);
 
-mAsic["EN_Transmit_On"]=(int)  bs[7];
-mAsic["EN_Dout"]=(int)  bs[6];
-mAsic["EN_RamFull"]=(int)  bs[5];
+mAsic["EN_Transmit_On"]= bs.test(7);
+mAsic["EN_Dout"]= bs.test(6);
+mAsic["EN_RamFull"]= bs.test(5);
 
 _mapSC[asicid] =mAsic;
 return;
@@ -224,7 +224,7 @@ return;
 void DIFSlowControl::FillAsicHR2(std::bitset<109*8> &bs)
 {
 int asicid=0;
-for (int j=0;j<8;j++) if (bs[j+(108-7)*8+2]!=0) asicid += (1<<(7-j));
+for (int j=0;j<8;j++) if (bs.test(j+(108-7)*8+2)!=0) asicid += (1<<(7-j));
 
 //std::cout<<"DIFSlowControl::FillAsicHR2 "<<asicid<<std::endl;
 char Name[256];
@@ -233,70 +233,70 @@ std::map<std::string,int> mAsic;
 int cTest[64],gain[64];
 for(int i=0;i<64;i++)
   {
-    cTest[i]=bs[i];
+    cTest[i]=bs.test(i);
     sprintf(Name,"Channel_%i_",i);
     std::string name(Name);
     mAsic[(name+"cTest")]=cTest[i];
 
     gain[i]=0;
-    for (int j=0;j<8;j++) if (bs[64+i*8+j]!=0) gain[i] +=(1<<j);
+    for (int j=0;j<8;j++) if (bs.test(64+i*8+j)!=0) gain[i] +=(1<<j);
     mAsic[(name+"Gain")]=gain[i];
 
   }
-mAsic["PwrOnPA"] = (int) bs[8*72];
-mAsic["Cmdb3SS"] = (int) bs[8*72+1];
-mAsic["Cmdb2SS"] = (int) bs[8*72+2];
-mAsic["Cmdb1SS"] = (int) bs[8*72+3];
-mAsic["Cmdb0SS"] = (int) bs[8*72+4];
-mAsic["SwSsc0"] = (int) bs[8*72+5];
-mAsic["SwSsc1"] = (int) bs[8*72+6];
-mAsic["SwSsc2"] = (int) bs[8*72+7];
+mAsic["PwrOnPA"] = bs.test(8*72);
+mAsic["Cmdb3SS"] = bs.test(8*72+1);
+mAsic["Cmdb2SS"] = bs.test(8*72+2);
+mAsic["Cmdb1SS"] = bs.test(8*72+3);
+mAsic["Cmdb0SS"] = bs.test(8*72+4);
+mAsic["SwSsc0"] = bs.test(8*72+5);
+mAsic["SwSsc1"] = bs.test(8*72+6);
+mAsic["SwSsc2"] = bs.test(8*72+7);
 
-mAsic["PwrOnBuff"] = (int) bs[8*73];
-mAsic["PwrOnSS"] = (int) bs[8*73+1];
-mAsic["PwrOnW"] = (int) bs[8*73+2];
-mAsic["Cmdb3Fsb2"] = (int) bs[8*73+3];
-mAsic["Cmdb2Fsb2"] = (int) bs[8*73+4];
-mAsic["Cmdb1Fsb2"] = (int) bs[8*73+5];
-mAsic["Cmdb0Fsb2"] = (int) bs[8*73+6];
-mAsic["Sw50k2"] = (int) bs[8*73+7];
+mAsic["PwrOnBuff"] = bs.test(8*73);
+mAsic["PwrOnSS"] = bs.test(8*73+1);
+mAsic["PwrOnW"] = bs.test(8*73+2);
+mAsic["Cmdb3Fsb2"] = bs.test(8*73+3);
+mAsic["Cmdb2Fsb2"] = bs.test(8*73+4);
+mAsic["Cmdb1Fsb2"] = bs.test(8*73+5);
+mAsic["Cmdb0Fsb2"] = bs.test(8*73+6);
+mAsic["Sw50k2"] = bs.test(8*73+7);
 
-mAsic["Sw100k2"] = (int) bs[8*74];
-mAsic["Sw100f2"] = (int) bs[8*74+1];
-mAsic["Sw50f2"] = (int) bs[8*74+2];
-mAsic["Cmdb3Fsb1"] = (int) bs[8*74+3];
-mAsic["Cmdb2Fsb1"] = (int) bs[8*74+4];
-mAsic["Cmdb1Fsb1"] = (int) bs[8*74+5];
-mAsic["Cmdb0Fsb1"] = (int) bs[8*74+6];
-mAsic["Sw50k1"] = (int) bs[8*74+7];
+mAsic["Sw100k2"] = bs.test(8*74);
+mAsic["Sw100f2"] = bs.test(8*74+1);
+mAsic["Sw50f2"] = bs.test(8*74+2);
+mAsic["Cmdb3Fsb1"] = bs.test(8*74+3);
+mAsic["Cmdb2Fsb1"] = bs.test(8*74+4);
+mAsic["Cmdb1Fsb1"] = bs.test(8*74+5);
+mAsic["Cmdb0Fsb1"] = bs.test(8*74+6);
+mAsic["Sw50k1"] = bs.test(8*74+7);
 
-mAsic["Sw100k1"] = (int) bs[8*75];
-mAsic["Sw100f1"] = (int) bs[8*75+1];
-mAsic["Sw50f1"] = (int) bs[8*75+2];
-mAsic["Sel0"] = (int) bs[8*75+3];
-mAsic["Sel11"] = (int) bs[8*75+4];
-mAsic["PwrOnFsb"] = (int) bs[8*75+5];
-mAsic["PwrOnFsb1"] = (int) bs[8*75+6];
-mAsic["PwrOnFsb2"] = (int) bs[8*75+7];
+mAsic["Sw100k1"] = bs.test(8*75);
+mAsic["Sw100f1"] = bs.test(8*75+1);
+mAsic["Sw50f1"] = bs.test(8*75+2);
+mAsic["Sel0"] = bs.test(8*75+3);
+mAsic["Sel11"] = bs.test(8*75+4);
+mAsic["PwrOnFsb"] = bs.test(8*75+5);
+mAsic["PwrOnFsb1"] = bs.test(8*75+6);
+mAsic["PwrOnFsb2"] = bs.test(8*75+7);
 
 
-mAsic["Sw50k0"] = (int) bs[8*76];
-mAsic["Sw100k0"] = (int) bs[8*76+1];
-mAsic["Sw100f0"] = (int) bs[8*76+2];
-mAsic["Sw50f0"] = (int) bs[8*76+3];
-mAsic["EnOtaQ"] = (int) bs[8*76+4];
-mAsic["OtaQ_PwrADC"] = (int) bs[8*76+5];
-mAsic["Discri_PwrA"] = (int) bs[8*76+6];
-mAsic["Discri2"] = (int) bs[8*76+7];
+mAsic["Sw50k0"] = bs.test(8*76);
+mAsic["Sw100k0"] = bs.test(8*76+1);
+mAsic["Sw100f0"] = bs.test(8*76+2);
+mAsic["Sw50f0"] = bs.test(8*76+3);
+mAsic["EnOtaQ"] = bs.test(8*76+4);
+mAsic["OtaQ_PwrADC"] = bs.test(8*76+5);
+mAsic["Discri_PwrA"] = bs.test(8*76+6);
+mAsic["Discri2"] = bs.test(8*76+7);
 
-mAsic["Discri1"] = (int) bs[8*77];
-mAsic["RS_or_Discri"] = (int) bs[8*77+1];
+mAsic["Discri1"] = bs.test(8*77);
+mAsic["RS_or_Discri"] = bs.test(8*77+1);
 
 int mask[64];
 for (int i=0;i<64;i++)
   {
     mask[i]=0;
-    for (int j=0;j<3;j++) if (bs[8*77+2+i*3+j]!=0) mask[i]+=(1<<j);
+    for (int j=0;j<3;j++) if (bs.test(8*77+2+i*3+j)!=0) mask[i]+=(1<<j);
     sprintf(Name,"Channel_%i_",i);
     std::string name(Name);
     mAsic[(name+"Mask")]=mask[i];
@@ -307,35 +307,35 @@ int B[3];
 for (int i=0;i<3;i++)
   {
     B[i]=0;
-    for (int j=0;j<10;j++) if (bs[8*102+2+i*10+j]!=0) B[i]+=(1<<j);
+    for (int j=0;j<10;j++) if (bs.test(8*102+2+i*10+j)!=0) B[i]+=(1<<j);
     sprintf(Name,"B%i",i);
     std::string name(Name);
     mAsic[name]=B[i];
   }
 
-mAsic["Smalldac"] = (int) bs[8*106];
-mAsic["DacSw"] = (int) bs[8*106+1];
-mAsic["OtagBgSw"] = (int) bs[8*106+2];
-mAsic["Trig2b"] = (int) bs[8*106+3];
-mAsic["Trig1b"] = (int) bs[8*106+4];
-mAsic["Trig0b"] = (int) bs[8*106+5];
-mAsic["EnTrigOut"] = (int) bs[8*106+6];
-mAsic["DiscrOrOr"] = (int) bs[8*106+7];
+mAsic["Smalldac"] =bs.test(8*106);
+mAsic["DacSw"] =bs.test(8*106+1);
+mAsic["OtagBgSw"] =bs.test(8*106+2);
+mAsic["Trig2b"] =bs.test(8*106+3);
+mAsic["Trig1b"] =bs.test(8*106+4);
+mAsic["Trig0b"] =bs.test(8*106+5);
+mAsic["EnTrigOut"] =bs.test(8*106+6);
+mAsic["DiscrOrOr"] =bs.test(8*106+7);
 
-mAsic["TrigExtVal"] = (int) bs[8*107];
-mAsic["RazChnIntVal"] = (int) bs[8*107+1];
-mAsic["RazChnExtVal"] = (int) bs[8*107+2];
-mAsic["ScOn"] = (int) bs[8*107+3];
-mAsic["CLKMux"] = (int) bs[8*107+4];
+mAsic["TrigExtVal"] =bs.test(8*107);
+mAsic["RazChnIntVal"] =bs.test(8*107+1);
+mAsic["RazChnExtVal"] =bs.test(8*107+2);
+mAsic["ScOn"] =bs.test(8*107+3);
+mAsic["CLKMux"] =bs.test(8*107+4);
 
 // EnOCDout1b 	EnOCDout2b 	EnOCTransmitOn1b 	EnOCTransmitOn2b 	EnOCChipsatb 	SelStartReadout 	SelEndReadout
-mAsic["SelEndReadout"] = (int) bs[8*108+1];
-mAsic["SelStartReadout"] = (int) bs[8*108+2];
-mAsic["EnOCChipsatb"] = (int) bs[8*108+3];
-mAsic["EnOCTransmitOn2b"] = (int) bs[8*108+4];
-mAsic["EnOCTransmitOn1b"] = (int) bs[8*108+5];
-mAsic["EnOCDout2b"] = (int) bs[8*108+6];
-mAsic["EnOCDout1b"] = (int) bs[8*108+7];
+mAsic["SelEndReadout"] =bs.test(8*108+1);
+mAsic["SelStartReadout"] =bs.test(8*108+2);
+mAsic["EnOCChipsatb"] =bs.test(8*108+3);
+mAsic["EnOCTransmitOn2b"] =bs.test(8*108+4);
+mAsic["EnOCTransmitOn1b"] =bs.test(8*108+5);
+mAsic["EnOCDout2b"] =bs.test(8*108+6);
+mAsic["EnOCDout1b"] =bs.test(8*108+7);
 
 _mapSC[asicid] =mAsic;
 }
@@ -345,11 +345,10 @@ _mapSC[asicid] =mAsic;
 void DIFSlowControl::Dump()
 {
 
-for (std::map< int,std::map < std::string,int > >::iterator it=_mapSC.begin();it!=_mapSC.end();it++)
+for (std::map< int,std::map < std::string,int > >::iterator it=_mapSC.begin();it!=_mapSC.end();++it)
   {
     std::cout<<"ASIC " <<it->first<<std::endl;
-    std::map < std::string,int >::iterator jt =it->second.begin();
-    for (std::map < std::string,int >::iterator jt =(it->second).begin(); jt!=(it->second).end();jt++)
+    for (std::map <std::string, int>::iterator jt =(it->second).begin(); jt!=(it->second).end();++jt)
 std::cout<<jt->first<<" : "<<jt->second<<std::endl;
   }
 }
