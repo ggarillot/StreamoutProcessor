@@ -5,28 +5,28 @@
 export PYTHONPATH=/cvmfs/ganga.cern.ch/Ganga/install/6.3.0/python:${PYTHONPATH}
 """
 
-from __future__ import print_function # import print function from py3 if running py2.x
+from __future__ import print_function  # import print function from py3 if running py2.x
 from __future__ import absolute_import
 
 import os
 import sys
-sys.path.append(".")
+import yapf
+
 import time
 import subprocess
-import shlex # split properly command line for Popen
-from marlin import Marlin # if error importing it move streamout.py to same folder
-# from lxml import etree
+import shlex  # split properly command line for Popen
+from marlin import Marlin  # if error importing it move streamout.py to same folder
 import yaml
 try:
     import ganga
-except ImportError :
+except ImportError:
     print("Ganga not found on system, won't run on grid")
-
 
 # Import default config file
 # Not needed here just for dumb editor not to complain about config not existing
 import config_streamout as conf
 
+sys.path.append(".")
 
 # # -----------------------------------------------------------------------------
 # def xmlValueBuilder(rootHandle, xmlHandleName, value, parameterType=None, option=None, optionValue=None, xmlParList=None):
@@ -39,7 +39,6 @@ import config_streamout as conf
 #         xmlHandle.set(option, optionValue)
 #     xmlHandle.text = value
 #     xmlParList[xmlHandleName] = value
-
 
 # # -----------------------------------------------------------------------------
 # def generateXML(inputFiles, outputFile, parList, xmlFile):
@@ -96,9 +95,10 @@ import config_streamout as conf
 #     with open(xmlFile, "w") as outFile:
 #         outFile.write(s)
 
+
 # -----------------------------------------------------------------------------
 def findNumberOfFiles(folder, findString):
-    ''' Return number of files associated with findString in folder 
+    ''' Return number of files associated with findString in folder
         If no file found print list of files in folder
     '''
     nFile = 0
@@ -110,9 +110,9 @@ def findNumberOfFiles(folder, findString):
         if findString in line:
             nFile += 1
     if nFile == 0:
-        print ("\n[{0}] - File Not found, available files: ".format(os.path.basename(__file__)))
+        print("\n[{0}] - File Not found, available files: ".format(os.path.basename(__file__)))
         for line in stdout_list:
-            print ("\t{0}".format(line))
+            print("\t{0}".format(line))
     return nFile
 
 
@@ -125,8 +125,13 @@ def listFiles(fileNumber, runNumber, fileName, filePath):
         fileList.append(fileName.format(filePath, runNumber, iFile))
 
 #    inFiles = '\n'.join(fileList)
-    print ('[{0}] - Found {1} raw slcio files for run {2} : \n{3}'.format(os.path.basename(__file__), fileNumber, runNumber, fileList))
+    print(
+        '[{0}] - Found {1} raw slcio files for run {2} : \n{3}'.format(
+            os.path.basename(__file__), fileNumber, runNumber, fileList
+        )
+    )
     return fileList
+
 
 # -----------------------------------------------------------------------------
 def elapsedTime(startTime):
@@ -138,15 +143,17 @@ def elapsedTime(startTime):
     print('Time passed: {:.0f} hour {:.0f} min {:.0f} sec'.format(t_hour, t_min, t_sec))
 
 
-
 # -----------------------------------------------------------------------------
 def checkPeriod(runNumber, runPeriod, configFile):
     ''' Check runNumber is associated to correct runPeriod
         Abort execution if not
     '''
+
     def periodError(goodPeriod):
-        return "[{0}] - RunNumber '{1}' is from TestBeam '{2}', you selected '{3}' in configFile '{4}'".format(os.path.basename(__file__), runNumber, goodPeriod, conf.runPeriod, configFile)
-    
+        return "[{0}] - RunNumber '{1}' is from TestBeam '{2}', you selected '{3}' in configFile '{4}'".format(
+            os.path.basename(__file__), runNumber, goodPeriod, conf.runPeriod, configFile
+        )
+
     if runNumber < '726177' and (runPeriod != 'SPS_08_2012' or runPeriod != 'SPS_11_2012'):
         sys.exit(periodError('SPS_08_2012 or SPS_11_2012'))
 
@@ -171,30 +178,35 @@ def checkPeriod(runNumber, runPeriod, configFile):
     if runNumber >= '736500' and runNumber <= '736575' and runPeriod != 'SPS_09_2017':
         sys.exit(periodError('SPS_09_2017'))
 
+
 # -----------------------------------------------------------------------------
 def scp(runNumber, serverName, serverPath, localPath):
-    ''' Download file from serverName:serverPath to localPath 
+    ''' Download file from serverName:serverPath to localPath
     '''
-    print ("[{0}] - Downloading run '{1}' from {2}:{3}".format(os.path.basename(__file__), runNumber, serverName, serverPath) )
+    print(
+        "[{0}] - Downloading run '{1}' from {2}:{3}".format(
+            os.path.basename(__file__), runNumber, serverName, serverPath
+        )
+    )
     scpPath = serverName + serverPath
-    subprocess.check_call(['scp', scpPath, localPath])#, env=dict(os.environ))
+    subprocess.check_call(['scp', scpPath, localPath])  # , env=dict(os.environ))
 
 
 # -----------------------------------------------------------------------------
-def createJob(executable, args = [], name='', comment='', backend='Local', backendCE='', voms=''):
+def createJob(executable, args=[], name='', comment='', backend='Local', backendCE='', voms=''):
     ''' Create Ganga job. Default backend is Local
     '''
     j = Job()
     j.application = Executable(exe=File(executable), args=args)
     j.name = name
-    j.comment = comment        
+    j.comment = comment
 
-    j.backend = backend    
+    j.backend = backend
     if backend == 'CREAM':
         j.backend.CE = backendCE
         try:
             gridProxy.voms = voms
-        except NameError: # ganga > 6.3 no longer has the gridProxy credentials system
+        except NameError:  # ganga > 6.3 no longer has the gridProxy credentials system
             print("using new cred system")
             # j.backend.credential_requirements = VomsProxy(vo=voms)
     return j
@@ -210,26 +222,24 @@ def setCliOptions(marlin, xmlSection):
             marlin.setCliOption(sectionName + param, value)
 
 
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def main():
     '''
     '''
-    scriptName = os.path.basename(__file__) # For logging clarity
+    scriptName = os.path.basename(__file__)  # For logging clarity
 
     runNumber = None
     runListArg = None
     fileNum = None
-    configFile = "config_streamout" # Default config file if none is given on cli     
-
+    configFile = "config_streamout"  # Default config file if none is given on cli
 
     # --- Parse CLI arguments
     if len(sys.argv) > 1:
         # --- Load configuration File
         configFile = sys.argv[1]
         try:
-            exec("import {0} as conf".format(configFile))
+            exec ("import {0} as conf".format(configFile))
         except (ImportError, SyntaxError):
             sys.exit("[{0}] - Cannot import config file '{1}'".format(scriptName, configFile))
         # --- /Load configuration File
@@ -239,18 +249,18 @@ def main():
             if len(sys.argv) > 3:
                 # --- Load number of streamoutFile to process
                 fileNum = int(sys.argv[3])
-    elif conf.runList : # runNumber configured in configFile
+    elif conf.runList:  # runNumber configured in configFile
         runList = conf.runList
-        print ("[{0}] : Running with configuration file '{1}' on runs '{2}'".format(scriptName, configFile, runList))
-    else :
-        sys.exit("Please give : configFile - runNumber(s)(optional if set up in configFile) - Number of streamout file to process(optional)")
-        
+        print("[{0}] : Running with configuration file '{1}' on runs '{2}'".format(scriptName, configFile, runList))
+    else:
+        sys.exit(
+            "Please give : configFile - runNumber(s)(optional if set up in configFile) - Number of streamout file to process(optional)"
+        )
+
     # --- /Parse CLI arguments
 
-
-
     # --- Load List of runs
-    if runListArg is None: # if no runs on CLI, load list from configFile
+    if runListArg is None:  # if no runs on CLI, load list from configFile
         try:
             runList = conf.runList
         except AttributeError:
@@ -259,40 +269,45 @@ def main():
         runList = runListArg.split(',')
     # --- /Load List of runs
 
-
-
-
-
     # For grid run, define a dictionary of generated configFile and associated inputFiles for each run
 
     for run in runList:
-        #Check if runNumber match given period in configFile
+        # Check if runNumber match given period in configFile
         checkPeriod(str(run), conf.runPeriod, configFile)
         runNumber = int(run)
         #   List number of files to streamout (raw data are split in 2Go files with
         #   format DHCAL_runNumber_I0_fileNumber.slcio )
         #   TODO Remove Hardcoding here
         stringToFind = 'DHCAL_{0}_I0_'.format(runNumber)
-        print ("[{0}] - Looking for files to streamout for run '{1}' in '{2}'... ".format(scriptName, runNumber, conf.inputPath), end="")
+        print(
+            "[{0}] - Looking for files to streamout for run '{1}' in '{2}'... ".format(
+                scriptName, runNumber, conf.inputPath
+            ), end=""
+        )
         if os.path.exists(conf.inputPath) is False:
             sys.exit("\n[{0}] - Folder '{1}' does not exist...exiting".format(scriptName, conf.inputPath))
-            
+
         fileNumber = findNumberOfFiles(conf.inputPath, stringToFind)
         if fileNumber == 0:
-            doScp = raw_input("[{0}] - No file found...download it from '{1}' ? (y/n)".format(scriptName, conf.serverName))
+            doScp = raw_input(
+                "[{0}] - No file found...download it from '{1}' ? (y/n)".format(scriptName, conf.serverName)
+            )
             if doScp == 'y':
                 try:
                     scp(runNumber, conf.serverName, conf.serverPath, conf.inputPath)
-                except :
-                    raise("[{0}] - Something wrong happened while downloading with scp".format(scriptName))
+                except:
+                    raise ("[{0}] - Something wrong happened while downloading with scp".format(scriptName))
             # else :
-                # sys.exit('Exiting') 
-        print ('OK')
+            # sys.exit('Exiting')
+        print('OK')
 
         # Check if more/less files available than asked by the user
         if fileNum is not None:
             if fileNum != fileNumber:
-                ans = raw_input('\n\t [{}] - *** WARNING! *** Found {} files for run {}, you asked to process {}. Proceed? (y/n)\n'.format(scriptName, fileNumber, runNumber, fileNum))
+                ans = raw_input(
+                    '\n\t [{}] - *** WARNING! *** Found {} files for run {}, you asked to process {}. Proceed? (y/n)\n'.
+                    format(scriptName, fileNumber, runNumber, fileNum)
+                )
                 if ans == 'y':
                     fileNumber = fileNum
                 else:
@@ -304,60 +319,60 @@ def main():
         outputFile = conf.outputFile.format(conf.outputPath, runNumber)
         conf.streamoutProc.LCIOOutputFile = outputFile + ".slcio"
         conf.streamoutProc.ROOTOutputFile = outputFile + ".root"
-        
-        print ("[{0}] - output file : {1}.slcio".format(scriptName, outputFile))
-        print ("[{0}] - MARLIN_DLL: {1}".format(scriptName, conf.marlinLib))
+
+        print("[{0}] - output file : {1}.slcio".format(scriptName, outputFile))
+        print("[{0}] - MARLIN_DLL: {1}".format(scriptName, conf.marlinLib))
 
         if os.path.exists("{0}.slcio".format(outputFile)) is True:
-            sys.exit("[{0}] - OutputFile already present : Delete or move it before running again...exiting".format(scriptName))
+            sys.exit(
+                "[{0}] - OutputFile already present : Delete or move it before running again...exiting".
+                format(scriptName)
+            )
         # Printing modification to xml file
         print("\n[{0}] ========================".format(scriptName))
         print("[{0}] --- Dumping modified xml parameters: ".format(scriptName))
         for par, value in vars(conf.glob).items():
             if par != 'name':
-                print ("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
+                print("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
         for par, value in vars(conf.streamoutProc).items():
             if par != 'name':
-                print ("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
+                print("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
         print("[{0}] ========================\n".format(scriptName))
 
-
-
-
-        # Marlin configuration 
+        # Marlin configuration
         marlinCfgFile = conf.marlinCfgFile.format(runNumber)
         marlin = Marlin()
         marlin.setXMLConfig(conf.xmlFile)
         marlin.setLibraries(conf.marlinLib)
         marlin.setILCSoftScript(conf.initILCSoftScript)
-        setCliOptions(marlin, conf.glob) # TODO: Move to Marlin.py
-        setCliOptions(marlin, conf.streamoutProc)        
+        setCliOptions(marlin, conf.glob)  # TODO: Move to Marlin.py
+        setCliOptions(marlin, conf.streamoutProc)
         marlin.writeConfigFile(marlinCfgFile)
-        
+
         # Running locally
         if conf.runOnGrid is False:
-            log = open(conf.logFile.format(conf.logPath, runNumber), "w", 1) # line-buffered
+            log = open(conf.logFile.format(conf.logPath, runNumber), "w", 1)  # line-buffered
             print("\n[{0}] ========================".format(scriptName))
-            print ('[{0}] --- Running Marlin...'.format(scriptName))
-            print ("[{0}] --- Ouput is logged to '{1}'".format(scriptName, log))
+            print('[{0}] --- Running Marlin...'.format(scriptName))
+            print("[{0}] --- Ouput is logged to '{1}'".format(scriptName, log))
             beginTime = time.time()
             if conf.logToFile is True:
                 subprocess.call(['python', 'run_marlin.py', marlinCfgFile], stdout=log, stderr=log)
             else:
                 subprocess.call(['python', 'run_marlin.py', marlinCfgFile])
 
-            print ('[{0}] - Running Marlin...OK - '.format(scriptName), end='')
+            print('[{0}] - Running Marlin...OK - '.format(scriptName), end='')
             try:
                 elapsedTime(beginTime)
             except ValueError:
-                print ("Can't print time...")
+                print("Can't print time...")
             print("[{0}] ========================\n".format(scriptName))
 
             # print ('[{0}] - Removing xmlFile...'.format(scriptName), end='')
             # subprocess.Popen(["rm", xmlFile])
-            
-        # Add gridInfo to Marlin configuration file + make Dic 
-        else: 
+
+        # Add gridInfo to Marlin configuration file + make Dic
+        else:
             with open(marlinCfgFile, 'r') as ymlfile:
                 cfg = yaml.load(ymlfile)
             gridSection = {}
@@ -372,24 +387,24 @@ def main():
 
 ###
             try:
-                print ("[{0}] --- Submiting Job ... ".format(scriptName))
+                print("[{0}] --- Submiting Job ... ".format(scriptName))
                 # Navigate jobtree, if folder doesn't exist create it
-                treePath = conf.runPeriod + '/' + scriptName[:-3] # Remove .py at end of scriptName
+                treePath = conf.runPeriod + '/' + scriptName[:-3]  # Remove .py at end of scriptName
                 # if jobtree.exists(treePath) is False: # Always returns true...
-                jobtree.cd('/') # make sure we are in root folder
-                try :                
-                    jobtree.cd(treePath) 
+                jobtree.cd('/')  # make sure we are in root folder
+                try:
+                    jobtree.cd(treePath)
                 except TreeError:
                     try:
                         jobtree.mkdir(treePath)
-                    except: # mkdir should write all missing folder if any....apparently not true
+                    except:  # mkdir should write all missing folder if any....apparently not true
                         print("WhatThe?")
-                        jobtree.mkdir(conf.runPeriod)            
+                        jobtree.mkdir(conf.runPeriod)
                         jobtree.mkdir(treePath)
                     jobtree.cd(treePath)
 
-                eos_installation ='/afs/cern.ch/project/eos/installation/user/'
-                eos_home='/eos/user/a/apingaul/CALICE/'
+                eos_installation = '/afs/cern.ch/project/eos/installation/user/'
+                eos_home = '/eos/user/a/apingaul/CALICE/'
 
                 # Update ganga configuration for eos access
                 config.Output.MassStorageFile['defaultProtocol'] = 'root://eosuser.cern.ch'
@@ -398,62 +413,64 @@ def main():
                 config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'] = eos_installation + 'bin/eos.select mkdir'
                 config.Output.MassStorageFile['uploadOptions']['path'] = eos_home
                 # Print it
-                print (config.Output.MassStorageFile['defaultProtocol'])
-                print (config.Output.MassStorageFile['uploadOptions']['cp_cmd'])
-                print (config.Output.MassStorageFile['uploadOptions']['ls_cmd'])
-                print (config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
-                print (config.Output.MassStorageFile['uploadOptions']['path'])
-
-
-
+                print(config.Output.MassStorageFile['defaultProtocol'])
+                print(config.Output.MassStorageFile['uploadOptions']['cp_cmd'])
+                print(config.Output.MassStorageFile['uploadOptions']['ls_cmd'])
+                print(config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
+                print(config.Output.MassStorageFile['uploadOptions']['path'])
 
                 inputFiles = []
                 for f in conf.gridInputFiles:
                     inputFiles.append(LocalFile(f))
                 inputFiles.append(LocalFile(marlinCfgFile))
-                print ('inputFiles:\n', inputFiles)
+                print('inputFiles:\n', inputFiles)
 
-                inputData=[]
+                inputData = []
                 for item in [inputDataFileList]:
                     l = []
-                    print ("\nitem=",item,"\n")
+                    print("\nitem=", item, "\n")
                     for f in item:
                         l.append(MassStorageFile(f))
-                    print ("\nl=",l,"\n")
+                    print("\nl=", l, "\n")
                     for f in l:
-                        print ("\nf=",f,"\n")
+                        print("\nf=", f, "\n")
 
                 inputData = GangaDataset(treat_as_inputfiles=False, files=[f for f in l])
 
-                print ('\n\ninputDataType:\n', type(inputData))
-                print ('\n\ninputData:\n', inputData)
+                print('\n\ninputDataType:\n', type(inputData))
+                print('\n\ninputData:\n', inputData)
                 for item in inputData:
-                    print (type(item))
-                    print (item)
+                    print(type(item))
+                    print(item)
 
-                j = createJob(executable='run_marlin.py', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
+                j = createJob(
+                    executable='run_marlin.py', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend,
+                    backendCE=conf.CE, voms=conf.voms
+                )
                 # j = createJob(executable='runStreamout.sh', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
                 j.comment = "Streamout " + conf.runPeriod
-                j.outputfiles = [MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')]
+                j.outputfiles = [
+                    MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')
+                ]
                 j.inputfiles = inputFiles
                 j.inputdata = inputData
 
-                # Save job as txtfile locally
+                # Save job as txtFile locally
                 # export(jobs(j.id), 'my_job.txt')
 
-                jobtree.add(j)            
+                jobtree.add(j)
                 # queues.add(j.submit)
                 j.submit()
-                print ("\n[{0}] ... submitting job done.\n".format(scriptName))
+                print("\n[{0}] ... submitting job done.\n".format(scriptName))
 
             except:
-                print ("[{0}] --- Failed to submit job ".format(scriptName))
+                print("[{0}] --- Failed to submit job ".format(scriptName))
                 raise
+
+
 ###
 
-
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-if  __name__ == '__main__':
+if __name__ == '__main__':
     main()

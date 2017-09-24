@@ -1,27 +1,29 @@
 #!/usr/bin/env python
 #
-import os, sys
+import os
+import sys
 from subprocess import call
 import yaml
 
+
 class Marlin(object):
     def __init__(self):
-        
+
         self.xmlConfig = None
         self.libraries = None
         self.ilcSoftInitScript = None
         self.cliOptions = {}
-    
+
     def setXMLConfig(self, xmlFile):
         ''' Set xml config file
         '''
         self.xmlConfig = xmlFile
-        
-    def setLibraries(self, librarires):
-        ''' Set dll librarires
+
+    def setLibraries(self, libraries):
+        ''' Set dll libraries
         '''
-        self.libraries = librarires
-        
+        self.libraries = libraries
+
     def setCliOptions(self, options):
         ''' Set all options to be superseded in xml
         '''
@@ -32,12 +34,12 @@ class Marlin(object):
         ''' Set One option to be superseded in xml
         '''
         self.cliOptions[option] = value
-        
+
     def setILCSoftScript(self, script):
         ''' Set init_ilcsoft.sh script to source for proper software linking
         '''
         self.ilcSoftInitScript = script
-        
+
     def writeConfigFile(self, cfgFile):
         ''' Write marlin specific config into configFile
             update file if found, create it otherwise
@@ -48,8 +50,8 @@ class Marlin(object):
         except IOError:
             # print "Creating new configuration file '{0}'".format(cfgFile)
             cfg = {}
-        else: # found existing config file 
-            if cfg is None: # empty config file
+        else:  # found existing config file
+            if cfg is None:  # empty config file
                 cfg = {}
         with open(cfgFile, 'w') as ymlfile:
             marlinSection = {}
@@ -57,16 +59,15 @@ class Marlin(object):
             marlinSection['xmlConfig'] = self.xmlConfig
             marlinSection['libraries'] = self.libraries
             marlinSection['ilcSoftInitScript'] = self.ilcSoftInitScript
-            
+
             if self.cliOptions is not None:
                 cliOptionSubSection = {}
                 marlinSection['cliOptions'] = cliOptionSubSection
-                
+
                 for key, value in self.cliOptions.items():
                     cliOptionSubSection[key] = value
-                    
-            ymlfile.write(yaml.dump(cfg, default_flow_style=False))
 
+            ymlfile.write(yaml.dump(cfg, default_flow_style=False))
 
     def readConfigFile(self, cfgFile):
         ''' Read Marlin specific config in cfgFile
@@ -76,18 +77,18 @@ class Marlin(object):
             with open(cfgFile, "r") as ymlfile:
                 cfg = yaml.load(ymlfile)
         except IOError:
-            sys.exit("[run_marlin.py] --- ERROR: Config file '{0}' not found....exiting".format(cfgFile))            
-        
+            sys.exit("[run_marlin.py] --- ERROR: Config file '{0}' not found....exiting".format(cfgFile))
+
         try:
             marlinSection = cfg['Marlin']
-            self.xmlConfig = marlinSection['xmlConfig'] 
-            self.libraries = marlinSection['libraries'] 
-            self.ilcSoftInitScript = marlinSection['ilcSoftInitScript']      
+            self.xmlConfig = marlinSection['xmlConfig']
+            self.libraries = marlinSection['libraries']
+            self.ilcSoftInitScript = marlinSection['ilcSoftInitScript']
             self.setCliOptions(marlinSection['cliOptions'].items())
         except KeyError, exc:
             print "Key {0} not found in cfgFile".format(exc)
 
-    def checkConfig(self,cfgFile):
+    def checkConfig(self, cfgFile):
         ''' Check that core config are set
             Exit otherwise
         '''
@@ -96,20 +97,23 @@ class Marlin(object):
             if v is None:
                 missingConfig.append(k)
             if missingConfig:
-               sys.exit("[run_marlin.py] --- ERROR: Some configuration are missing from '{0}'' : {1} ... exiting".format(cfgFile,missingConfig))
-
+                sys.exit(
+                    "[run_marlin.py] --- ERROR: Some configuration are missing from '{0}'' : {1} ... exiting".format(
+                        cfgFile, missingConfig
+                    )
+                )
 
     def run(self, cfgFile):
         self.checkConfig(cfgFile)
         # source ilcsoft for proper environment
-        cmd = "source {0}; ".format(self.ilcSoftInitScript)        
+        cmd = "source {0}; ".format(self.ilcSoftInitScript)
         cmd += "Marlin "
-        
+
         # add eventual replacement options to configFile
         # print self.cliOptions
         if self.cliOptions:
             for key, value in self.cliOptions.items():
-                cmd += '--{0}="{1}" '.format(key, value)        
+                cmd += '--{0}="{1}" '.format(key, value)
 
         # Add configuration file
         cmd += self.xmlConfig
