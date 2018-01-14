@@ -249,15 +249,15 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
   {
     if (e == 0 && m_dropFirstRU)
       {
-	std::cout << " Dropping RU.....\n\n"<<std::endl;
-	continue;
+        streamlog_out(WARNING) << " Dropping RU.....\n\n" << std::endl;
+        continue;
       }
     LMGeneric *pLCGenericObject = dynamic_cast<LMGeneric *> (pLCCollection->getElementAt(e));
 
     if (NULL == pLCGenericObject)
       {
-	std::cout<< " null object! \n\n" << std::endl;
-	continue;
+        streamlog_out(WARNING)<< " null object! \n\n" << std::endl;
+        continue;
       }
     // grab the generic object contents
     int *pGenericRawBuffer = &(pLCGenericObject->getIntVector()[0]);
@@ -282,9 +282,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
 
       if (find(m_ecalDetectorIds.begin(), m_ecalDetectorIds.end(), _iptr[0]) != m_ecalDetectorIds.end())
       {
-        streamlog_out ( DEBUG ) << red << "Skipping ECAL data with detId '" << _iptr[0] << "'" << normal << std::endl;
+        streamlog_out(DEBUG) << red << "Skipping ECAL data with detId '" << _iptr[0] << "'" << normal << std::endl;
         continue;
-      }
+        }
     }
 
     uint32_t ruSize = pLCGenericObject->getNInt() * sizeof(int32_t);
