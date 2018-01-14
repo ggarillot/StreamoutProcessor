@@ -437,6 +437,9 @@ def main():
                 j.inputfiles = inputFiles
                 j.inputdata = inputData
 
+                # Add a postprocessor that will move the outputfiles on the grid to their proper location
+                # This needs to be present in the same folder
+                j.postprocessors.append(CustomChecker(module='GangaCheckerMoveFileOnGrid.py'))
                 jobtree.add(j)
 
                 queues.add(j.submit)
