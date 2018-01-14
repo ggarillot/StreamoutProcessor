@@ -3,6 +3,7 @@
     python steer/streamout.py config_streamout run1,run2,etc. numberOfFilesToStreamout(optional, script will runs on all files by default)
     export PYTHONPATH=/cvmfs/ganga.cern.ch/Ganga/install/LATEST/python/:${PYTHONPATH}
 '''
+import sys
 
 # SPS_06_2016
 # MRPC Runs
