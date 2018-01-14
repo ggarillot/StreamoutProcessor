@@ -30,6 +30,26 @@
 #include "DIFUnpacker.h"
 #include "DIF.h"
 
+//-------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
+class LMGeneric: public IMPL::LCGenericObjectImpl
+{
+public:
+  // /** Constructor
+  //  */
+  LMGeneric()
+  {
+    /* nop */
+  }
+
+  /** Get the int vector (reference)
+   */
+  std::vector<int>& getIntVector()
+  {
+    return _intVec;
+  }
+};
+
 class LCStreamoutWriter
 {
 public:
