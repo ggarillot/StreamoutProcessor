@@ -72,16 +72,22 @@ def checkPeriod(runNumber, runPeriod, configFile):
 
 
 # -----------------------------------------------------------------------------
-def scp(runNumber, serverName, serverPath, localPath):
+def scp(runNumber, fName, serverName, serverPath, localPath):
     ''' Download file from serverName:serverPath to localPath
     '''
     print(
-        "[{0}] - Downloading run '{1}' from {2}:{3}".format(
+        "[{}] - Downloading run '{}' from {}:{}".format(
             os.path.basename(__file__), runNumber, serverName, serverPath
         )
     )
-    scpPath = serverName + serverPath
-    subprocess.check_call(['scp', scpPath, localPath])  # , env=dict(os.environ))
+    fName.format(runNumber)
+    scpPath = serverName + ":" + serverPath + fName.format(runNumber)
+    print(scpPath)
+    try:
+        subprocess.check_call(['scp', scpPath, localPath])
+    except subprocess.CalledProcessError:
+        sys.exit("[{}] - Something wrong happened while downloading with scp: return code".format(
+            os.path.basename(__file__)))
 
 
 # -----------------------------------------------------------------------------
@@ -168,6 +174,10 @@ def main():
                 sys.exit("\n[{}] - Folder '{}' does not exist...exiting".format(scriptName, conf.inputPath))
 
             inputDataFileList = [f for f in os.listdir(conf.inputPath) if str(runNumber) in f]
+            if not inputDataFileList:
+                doScp = raw_input("[{}] - No file found...download it from '{}' ? (y/n)".format(scriptName, conf.serverName))
+                if doScp == 'y':
+                    scp(runNumber, conf.inputFile, conf.serverName, conf.serverDataPath, conf.inputPath)
                 else:
                     sys.exit('Exiting')
 
