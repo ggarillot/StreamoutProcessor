@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 from Ganga.Utility.GridShell import getShell
+from Ganga.Utility.Config import getConfig
 from Ganga.Core.exceptions import ProtectedAttributeError
 import time
+import os
 
 
 def fileExists(f, fName):
@@ -18,12 +20,26 @@ def fileExists(f, fName):
 
 
 def makeGridAlias(f, fName):
+    if not f.locations:
+        output = "The file can't be uploaded because no guid found for '{}'".format(fName)
+        f.failureReason += '\n' + output
+        return 1, output
     cmd = 'lcg-aa --vo {} {} lfn:{}'.format(f.credential_requirements.vo, f.locations, fName)
     # print 'aliasCmd: ', cmd
     (exitcode, output, m) = getShell(f.credential_requirements).cmd1(cmd, capture_stderr=True)
     if exitcode != 0:
         f.failureReason += "\nThe file can't be uploaded because of {}".format(output)
     return exitcode, output
+
+
+def fixPostProcessFile(job):
+    postprocessLocationsPath = os.path.join(job.outputdir, getConfig('Output')['PostProcessLocationsFileName'])
+    postprocesslocations = None
+    with open(postprocessLocationsPath, 'r') as postprocesslocations:
+        all_lines = postprocesslocations.readlines()
+    all_lines = [line.replace('\\n', '\n') for line in all_lines]
+    with open(postprocessLocationsPath, 'w') as postprocesslocations:
+        postprocesslocations.write(''.join(all_lines))
 
 
 def check(j):
@@ -39,6 +55,12 @@ def check(j):
         # print 'fName: ', fName
         if fileExists(f, fName):
             fName += time.strftime("-%Y-%m-%d_%H-%M-%S")
+
+        # lcgse not able to process multiple output files due to typo in postprocesslocations file
+        # Try fixing the typo to get around
+        if not f.locations:
+            fixPostProcessFile(j)
+            f.setLocation()
         rc, output = makeGridAlias(f, fName)
         if rc != 0:
             good = False
