@@ -13,7 +13,7 @@ def fileExists(f, fName):
     elif 'No such file or directory' in output:
         return False
     else:
-        f.failureReason += " The file can't be uploaded because of lsCmd output : {}".format(output)
+        f.failureReason += "\nThe file can't be uploaded because of lsCmd output : {}".format(output)
         return True
 
 
@@ -22,7 +22,7 @@ def makeGridAlias(f, fName):
     # print 'aliasCmd: ', cmd
     (exitcode, output, m) = getShell(f.credential_requirements).cmd1(cmd, capture_stderr=True)
     if exitcode != 0:
-        f.failureReason += " The file can't be uploaded because of {}".format(output)
+        f.failureReason += "\nThe file can't be uploaded because of {}".format(output)
     return exitcode, output
 
 
