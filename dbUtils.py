@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 '''
     Utils to to get information from GEOMETRY db
+    mysql -u root
+    CREATE USER 'acqilc'@'localhost' IDENTIFIED BY 'RPC_2008';
+    create database GEOMETRY
+    GRANT ALL PRIVILEGES ON GEOMETRY.* TO 'acqilc'@'localhost';
+    mysql -u acqilc GEOMETRY < /eos/user/a/apingaul/CALICE/geometry_m3_2017.sql -p
 '''
 
 from __future__ import print_function  # import print function from py3 if running py2.x
 import sys
-from lxml import etree
-import MySQLdb as mdb
+import pymysql as pmsql
 
 
 # -----------------------------------------------------------------------------
@@ -222,7 +226,7 @@ def main():
     '''
     '''
     try:
-        db = mdb.connect(host='localhost', user='acqilc', passwd='RPC_2008', db='GEOMETRY')
+        db = pmsql.connect(host='localhost', user='acqilc', passwd='RPC_2008', db='GEOMETRY')
         testName = "SPS_12_2014"
         cur = db.cursor()
 
@@ -266,7 +270,7 @@ def main():
         # create Dict Cursor -> Return data as python dict instead of python list
         # -> can use print row["Id"], row["Name"]
 
-        # cur =db.cursor(mdb.cursors.DictCursor)
+        # cur =db.cursor(pmsql.cursors.DictCursor)
         # cur.execute("SELECT * FROM Writers LIMIT 4")
 
         # rows = cur.fetchall()
@@ -279,7 +283,7 @@ def main():
         # Close all databases
         db.close()
 
-    except mdb.Error as e:
+    except pmsql.Error as e:
         print("*** *** Error %d: %s" % (e.args[0], e.args[1]))
         sys.exit(1)
 
