@@ -106,7 +106,7 @@ def createJob(executable, args=[], name='', comment='', backend='Local', backend
             gridProxy.voms = voms
         except NameError:  # ganga > 6.3 no longer has the gridProxy credentials system
             print("using new cred system")
-            # j.backend.credential_requirements = VomsProxy(vo=voms)
+            j.backend.credential_requirements = VomsProxy(vo=voms)
     return j
 
 
