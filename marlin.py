@@ -45,15 +45,15 @@ class Marlin(object):
             update file if found, create it otherwise
         '''
         try:
-            with open(cfgFile, 'r') as ymlfile:
-                cfg = yaml.load(ymlfile)
+            with open(cfgFile, 'r') as ymlFile:
+                cfg = yaml.load(ymlFile)
         except IOError:
             # print "Creating new configuration file '{0}'".format(cfgFile)
             cfg = {}
         else:  # found existing config file
             if cfg is None:  # empty config file
                 cfg = {}
-        with open(cfgFile, 'w') as ymlfile:
+        with open(cfgFile, 'w') as ymlFile:
             marlinSection = {}
             cfg['Marlin'] = marlinSection
             marlinSection['xmlConfig'] = self.xmlConfig
@@ -67,15 +67,15 @@ class Marlin(object):
                 for key, value in self.cliOptions.items():
                     cliOptionSubSection[key] = value
 
-            ymlfile.write(yaml.dump(cfg, default_flow_style=False))
+            ymlFile.write(yaml.dump(cfg, default_flow_style=False))
 
     def readConfigFile(self, cfgFile):
         ''' Read Marlin specific config in cfgFile
             Exit if cfgFile not found
         '''
         try:
-            with open(cfgFile, "r") as ymlfile:
-                cfg = yaml.load(ymlfile)
+            with open(cfgFile, "r") as ymlFile:
+                cfg = yaml.load(ymlFile)
         except IOError:
             sys.exit("[run_marlin.py] --- ERROR: Config file '{0}' not found....exiting".format(cfgFile))
 
@@ -99,9 +99,7 @@ class Marlin(object):
             if missingConfig:
                 sys.exit(
                     "[run_marlin.py] --- ERROR: Some configuration are missing from '{0}'' : {1} ... exiting".format(
-                        cfgFile, missingConfig
-                    )
-                )
+                        cfgFile, missingConfig))
 
     def run(self, cfgFile):
         self.checkConfig(cfgFile)
