@@ -276,6 +276,15 @@ def main():
                 inputDataFileList = [
                     f for f in subprocess.check_output(['lfc-ls', gridInputPath]).splitlines() if str(runNumber) in f
                 ]
+                # check if the folder is softlinked before stopping
+                if not inputDataFileList:
+                    out = subprocess.check_output(['lfc-ls', '-l', gridInputPath])
+                    if '->' in out:
+                        lnPath = str(out.split(' ')[-1].strip('\n'))
+                        inputDataFileList = [
+                            f for f in subprocess.check_output(['lfc-ls', lnPath]).splitlines() if str(runNumber) in f
+                        ]
+
             except (subprocess.CalledProcessError, OSError):
                 sys.exit("\n[{}] - Folder '{}' not found...exiting".format(scriptName, gridInputPath))
 
