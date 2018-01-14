@@ -219,6 +219,7 @@ marlinProc.InputCollectionName = 'RU_XDAQ'
 # glob.outputCollectionType = 'RawCalorimeterHit'
 marlinProc.OutputCollectionName = 'DHCALRawHits'
 # streamoutProc.exportROOT = True # Write to root file (Not implemented yet)
+marlinProc.Verbosity = 'MESSAGE'
 
 marlinProc.RU_SHIFT = 23  # Not used?
 marlinProc.DropFirstRU = False  # Drop first Trigger
