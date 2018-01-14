@@ -124,6 +124,7 @@ ilcSoftVersion = 'v01-19-05'
 gridIlcSoftVersion = 'v01-19-05'
 ilcSoftPath = '/opt/ilcsoft/'
 gridIlcSoftPath = '/cvmfs/ilc.desy.de/sw/x86_64_gcc49_sl6/'
+processorType = 'Streamout'
 
 # General Path to find/store data: the following assumes that all data is in a subfolder of dataPath
 # Overwritten by gridDataPath if runOnGrid is True

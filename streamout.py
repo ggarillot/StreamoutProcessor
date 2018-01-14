@@ -13,6 +13,10 @@ import time
 import subprocess
 
 from marlin import Marlin
+import pymysql as pmsql
+
+import dbUtils as dbu  # custom interfaces to TestBeam databases
+
 import yaml
 try:
     import Ganga
@@ -82,6 +86,22 @@ def elapsedTime(startTime):
     (t_min, t_sec) = divmod(t_sec, 60)
     (t_hour, t_min) = divmod(t_min, 60)
     print('Time passed: {:.0f} hour {:.0f} min {:.0f} sec'.format(t_hour, t_min, t_sec))
+
+
+# -----------------------------------------------------------------------------
+def generateXMLGeometryFile(testBeamPeriod, fName):
+    db = pmsql.connect(host='localhost', user='acqilc', passwd='RPC_2008', db='GEOMETRY')
+    cur = db.cursor()
+
+    print("[{}] - Selected TestBeam: '{}'".format(os.path.basename(__file__), testBeamPeriod))
+
+    testBeamIdx = dbu.selectTestBeam(cur, testBeamPeriod)
+    print("[{}] - TestBeam index : '{}'".format(os.path.basename(__file__), testBeamIdx))
+
+    difList = dbu.selectDifList(cur, testBeamIdx).fetchall()
+    layerList = dbu.selectLayerList(cur, testBeamIdx).fetchall()
+
+    dbu.createGeomXml(fName, difList, layerList)
 
 
 # -----------------------------------------------------------------------------
@@ -257,6 +277,22 @@ def main():
                 sys.exit("[{}] - OutputFile already present : Delete or move it before running again...exiting".format(
                     scriptName))
 
+        # Looking for or generating xml Geometry File - Not necessary for streamout
+        try:
+            if os.path.exists(conf.geomPath + conf.geomFile) is False:
+                print("[{}] - No geometry file found, creating one from database for period '{}'...".format(
+                    scriptName, conf.runPeriod))
+                generateXMLGeometryFile(conf.runPeriod, conf.geomPath + conf.geomFile)
+                print("[{}] - No geometry file found, creating one from database for period '{}'...OK -> '{}' ".format(
+                    scriptName, conf.runPeriod, conf.geomPath + conf.geomFile))
+            else:
+                print("[{}] - Found geometry file '{}'".format(scriptName, conf.geomPath + conf.geomFile))
+        except AttributeError:
+            try:
+                if 'Streamout' in conf.processorType:
+                    pass
+            except AttributeError:
+                sys.exit("[{}] - No geometryFile attribute found in configFile '{}'".format(scriptName, configFile))
 
         # Printing modification to xml file
         if conf.runOnGrid is False:
