@@ -12,9 +12,9 @@
     <parameter name="Verbosity" type="string" options="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT">DEBUG0</parameter>
     <parameter name="InputCollectionName" type="string" lcioInType="LCGenericObject">RU_XDAQ</parameter>
     <parameter name="OutputCollectionName" type="string" lcioOutType="LCGenericObject">DHCALRawHits</parameter>
-    <parameter name="LCIOOutputFile" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Streamout/DHCAL_728603_SO_TAIS.slcio</parameter>
-    <parameter name="ROOTOutputFile" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Streamout/DHCAL_728603_SO_TAIS.root</parameter>
-    <parameter name="PlotFolder" type="string">/Volumes/PagosDisk/CALICE/data/PS_06_2015/Plots</parameter>
+    <parameter name="LCIOOutputFile" type="string">InputFile.slcio</parameter>
+    <parameter name="ROOTOutputFile" type="string">outputFile.root</parameter>
+    <parameter name="PlotFolder" type="string">PlotFolder</parameter>
     <parameter name="RU_SHIFT" type="int">23</parameter>
     <parameter name="DropFirstRU" type="bool">False</parameter>
     <parameter name="XDAQ_SHIFT" type="int">24</parameter>

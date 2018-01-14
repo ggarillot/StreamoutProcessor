@@ -61,8 +61,17 @@
 # SPS 10 2016 state 238
 # runList=[733656, 733660, 733665, 733675, 733680, 733683, 733686, 733689, 733693, 733696]
 ''' ------------------------- SPS_09_2017 ------------------------- '''
-# Calo displacement scan
-# runList = [736572,736571,736570,736569,736568,736567,736566,736565,736564,736563,736562,736561,736560,736559,736558,736557,736556,736554,736545,736544,736543,736542,736541,736540,736539,736538,736537,736536,736535,736533,736532,736531,736530,736529]
+# Calo displacement scan ?
+# Full List
+# runList = [736572, 736571, 736570, 736569, 736568, 736567, 736566, 736565, 736564, 736563, 736562, 736561, 736560, 736559, 736558, 736557, 736556, 736554, 736545, 736544, 736543, 736542, 736541, 736540, 736539, 736538, 736537, 736536, 736535, 736533, 736532, 736531, 736530, 736529]
+
+# Complete list withtout bad runs
+runList = [
+    736572, 736571, 736570, 736569, 736567, 736566, 736565, 736564, 736563, 736562, 736560, 736559, 736558, 736545,
+    736543, 736542, 736540, 736538, 736537, 736536, 736535, 736532, 736531, 736530, 736528, 736525, 736523, 736522,
+    736521, 736520, 736519, 736517, 736516, 736515, 736514, 736513, 736512, 736511, 736509, 736508, 736507, 736506,
+    736505, 736503, 736501, 736500
+]
 
 # Normal scan
 runList = [736522, 736520, 736519, 736517, 736513]
@@ -73,13 +82,22 @@ runList = [736522, 736520, 736519, 736517, 736513]
 # runList=[730655, 730668, 730677, 730709, 730713] # SPS_10_2015
 # runList =[733728] # SPS_10_2016
 
+# All data are assumed to be in a perPeriod subfolder
+# runPeriod = 'SPS_12_2014'
+# runPeriod = 'SPS_04_2015'
+# runPeriod = 'PS_06_2015'
+# runPeriod = 'SPS_10_2015'
+# runPeriod = 'SPS_06_2016'
+# runPeriod = 'SPS_10_2016'
+runPeriod = 'SPS_09_2017'
+
 ####################
 # Grid Section
 ####################
 runOnGrid = True
 # runOnGrid = False
-backend = 'Local'
-# backend = 'CREAM'
+# backend = 'Local'
+backend = 'CREAM'
 # backend = 'LSF'
 voms = 'calice'
 # CE = 'lyogrid07.in2p3.fr:8443/cream-pbs-calice'
@@ -120,14 +138,6 @@ if runOnGrid is True:
 initILCSoftScript = ilcSoftPath + ilcSoftVersion + "/init_ilcsoft.sh"
 marlinCfgFile = "marlinCfg_{0}.yml"  # .format(runNumber) cfgFile name written by script to properly run marlin with all variables set
 
-# All data are assumed to be in a perPeriod subfolder
-# runPeriod = "SPS_12_2014"
-# runPeriod = "SPS_04_2015"
-# runPeriod = "PS_06_2015"
-# runPeriod = "SPS_10_2015"
-# runPeriod = "SPS_06_2016"
-# runPeriod = "SPS_10_2016"
-runPeriod = "SPS_09_2017"
 
 # General Path to find/store data: the following assumes that all data is in a subfolder of dataPath
 # Overwritten by gridDataPath if runOnGrid is True
@@ -167,14 +177,13 @@ if runOnGrid is True:
     gridInputFiles.append(gridProcessorPath + 'marlin.py')
     # gridInputFiles.append(marlinCfgFile)
 
-runOnGrid = False
 
 ####################
 # Scp section for autoDownload before running
 ####################
 # If file not available, use serverName to scp it from.
-serverName = 'lyoac29'
-# serverName = 'lyoac30'
+# serverName = 'lyoac29'
+serverName = 'lyoac30'
 # serverName = 'lyosdhcal10'
 # serverName = 'lyosdhcal12'
 
@@ -207,9 +216,9 @@ class xmlOptionSection(object):
 # Global param
 ###
 glob = xmlOptionSection('global')
-glob.Verbosity = "DEBUG0"
+glob.Verbosity = 'MESSAGE'
 glob.MaxRecordNumber = 0  # Max Number of event to process
-glob.SkipNEvents = 0  # Number of event to skip
+glob.SkipNEvents = 0      # Number of event to skip
 glob.LCIOInputFiles = []
 
 # Processor param
@@ -249,4 +258,6 @@ elif runPeriod.find("2016") != -1 or runPeriod.find("2017") != -1:
     # streamoutProc.EcalDetectorIds = "201 1100"
 
 else:
-    print "[config_streamout] - runPeriod '%s' is wrong or undefined in configuration file" % runPeriod
+    print "[config_streamout] - runPeriod '{}' is wrong or undefined in configuration file".format(runPeriod)
+
+print '[config_streamout] - Finished parsing configFile'
