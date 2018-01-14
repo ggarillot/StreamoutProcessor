@@ -111,7 +111,7 @@ def checkPeriod(runNumber, runPeriod, configFile):
     '''
     def periodError(goodPeriod):
         return "[{}] - RunNumber '{}' is from TestBeam '{}', you selected '{}' in configFile '{}'".format(
-            os.path.basename(__file__), runNumber, goodPeriod, conf.runPeriod, configFile)
+            os.path.basename(__file__), runNumber, goodPeriod, runPeriod, configFile)
 
     if runNumber < '726177' and (runPeriod != 'SPS_08_2012' or runPeriod != 'SPS_11_2012'):
         sys.exit(periodError('SPS_08_2012 or SPS_11_2012'))
