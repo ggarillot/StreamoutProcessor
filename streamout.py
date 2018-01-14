@@ -18,6 +18,12 @@ try:
     import Ganga
 except ImportError:
     print("Ganga not found on system, won't run on grid")
+    gangaNotFound = True
+else:
+    gangaNotFound = False
+    from Ganga.Core.exceptions import IncompleteJobSubmissionError
+    from Ganga.GPI import *
+    # Job, jobtree, TreeError, config, LocalFile, MassStorageFile, GangaDataset
 
 sys.path.append(".")
 
@@ -180,13 +186,23 @@ def main():
                     scp(runNumber, conf.inputFile, conf.serverName, conf.serverDataPath, conf.inputPath)
                 else:
                     sys.exit('Exiting')
+        else:
+            gridInputPath = '/grid/' + conf.voms + '/' + conf.inputPath
+            try:
+                inputDataFileList = [
+                    f for f in subprocess.check_output(['lfc-ls', gridInputPath]).splitlines() if str(runNumber) in f
+                ]
+            except (subprocess.CalledProcessError, OSError):
+                sys.exit("\n[{}] - Folder '{}' not found...exiting".format(scriptName, gridInputPath))
 
         if conf.runOnGrid is False:
             outputFile = conf.outputPath + conf.outputFile.format(runNumber)
             marlinLib = conf.processorPath + 'lib/' + conf.marlinLib
             inputDataFileList = [conf.inputPath + f for f in inputDataFileList]
+        else:  # file is uploaded to the local folder on the WorkerNode
+            marlinLib = 'lib/' + conf.marlinLib
+            outputFile = conf.outputFile.format(runNumber)
         conf.glob.LCIOInputFiles = ' '.join(inputDataFileList)
-        outputFile = conf.outputFile.format(conf.outputPath, runNumber)
         conf.streamoutProc.LCIOOutputFile = outputFile + ".slcio"
         conf.streamoutProc.ROOTOutputFile = outputFile + ".root"
 
@@ -200,21 +216,23 @@ def main():
 
 
         # Printing modification to xml file
-        print("\n[{0}] ========================".format(scriptName))
-        print("[{0}] --- Dumping modified xml parameters: ".format(scriptName))
-        for par, value in vars(conf.glob).items():
-            if par != 'name':
-                print("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
-        for par, value in vars(conf.streamoutProc).items():
-            if par != 'name':
-                print("[{0}] \t\t{1}:\t{2}".format(scriptName, par, value))
-        print("[{0}] ========================\n".format(scriptName))
+        if conf.runOnGrid is False:
+            print("\n[{}] ========================".format(scriptName))
+            print("[{}] --- Dumping modified xml parameters: ".format(scriptName))
+            for par, value in vars(conf.glob).items():
+                if par != 'name':
+                    print("[{}] \t\t{}:\t{}".format(scriptName, par, value))
+            for par, value in vars(conf.marlinProc).items():
+                if par != 'name':
+                    print("[{}] \t\t{}:\t{}".format(scriptName, par, value))
+            print("[{}] ========================\n".format(scriptName))
 
         # Marlin configuration
+        # marlinCfgFile = conf.marlinCfgFile.format(conf.processorPath, runNumber)
         marlinCfgFile = conf.marlinCfgFile.format(runNumber)
         marlin = Marlin()
         marlin.setXMLConfig(conf.xmlFile)
-        marlin.setLibraries(conf.marlinLib)
+        marlin.setLibraries(marlinLib)
         marlin.setILCSoftScript(conf.initILCSoftScript)
         setCliOptions(marlin, conf.glob)  # TODO: Move to Marlin.py
         setCliOptions(marlin, conf.streamoutProc)
@@ -228,9 +246,9 @@ def main():
             print("[{}] --- Output is logged to '{}'".format(scriptName, log))
             beginTime = time.time()
             if conf.logToFile is True:
-                subprocess.call(['python', 'run_marlin.py', marlinCfgFile], stdout=log, stderr=log)
+                subprocess.call(['python', 'run_marlin.py', conf.marlinCfgPath + marlinCfgFile], stdout=log, stderr=log)
             else:
-                subprocess.call(['python', 'run_marlin.py', marlinCfgFile])
+                subprocess.call(['python', 'run_marlin.py', conf.marlinCfgPath + marlinCfgFile])
 
             print('[{}] - Running Marlin...OK - '.format(scriptName), end='')
             try:
@@ -244,16 +262,18 @@ def main():
 
         # Add gridInfo to Marlin configuration file + make Dic
         else:
-            with open(marlinCfgFile, 'r') as ymlfile:
+            if gangaNotFound is True:
+                sys.exit('Ganga python binding not found, can not run on grid')
+            with open(conf.marlinCfgPath + marlinCfgFile, 'r') as ymlfile:
                 cfg = yaml.load(ymlfile)
             gridSection = {}
             cfg['Grid'] = gridSection
-            gridSection['downloader'] = conf.gridDownloader
-            gridSection['uploader'] = conf.gridUploader
-            gridSection['LCG_CATALOG_TYPE'] = conf.LCG_CATALOG_TYPE
-            gridSection['LFC_HOST'] = conf.LFC_HOST
+            # gridSection['downloader'] = conf.gridDownloader
+            # gridSection['uploader'] = conf.gridUploader
+            gridSection['LCG_CATALOG_TYPE'] = conf.lcg_catalog_type
+            gridSection['LFC_HOST'] = conf.lfc_host
             gridSection['inputFiles'] = conf.gridInputFiles
-            with open(marlinCfgFile, 'w') as ymlfile:
+            with open(conf.marlinCfgPath + marlinCfgFile, 'w') as ymlfile:
                 ymlfile.write(yaml.dump(cfg, default_flow_style=False))
 
             try:
@@ -293,13 +313,13 @@ def main():
                 inputFiles = []
                 for f in conf.gridInputFiles:
                     inputFiles.append(LocalFile(f))
-                inputFiles.append(LocalFile(marlinCfgFile))
+                inputFiles.append(LocalFile(conf.marlinCfgPath + marlinCfgFile))
                 # print('inputFiles:\n', inputFiles)
 
+                # TODO: Check that files already exists on grid before submitting
                 inputData = []
                 for item in [inputDataFileList]:
-                    l = []
-                    print("\nitem=", item, "\n")
+                    inputList = []
                     for f in item:
                         l.append(MassStorageFile(f))
                     print("\nl=", l, "\n")

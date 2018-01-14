@@ -103,12 +103,13 @@ voms = 'calice'
 # CE = 'lyogrid07.in2p3.fr:8443/cream-pbs-calice'
 # CE = 'lpnhe-cream.in2p3.fr:8443/cream-pbs-calice'
 CE = 'grid-cr0.desy.de:8443/cream-pbs-desy'
+SE = 'lyogrid06.in2p3.fr'
 
-LCG_CATALOG_TYPE = 'lfc'
-LFC_HOST = 'grid-lfc.desy.de'
 carefulLoaderDir = '/eos/user/a/apingaul/CALICE/script/'
 gridDownloader = carefulLoaderDir + 'carefulDownload.sh'
 gridUploader = carefulLoaderDir + 'carefulUpload.sh'
+lcg_catalog_type = 'lfc'
+lfc_host = 'grid-lfc.desy.de'
 
 eos_home = '/eos/user/a/apingaul/CALICE/'
 processorPath = eos_home + "Software/Streamout/"
@@ -118,7 +119,6 @@ gridProcessorPath = eos_home + "Software/Streamout/"
 # Global variables
 ####################
 logToFile = False
-marlinCfgFile = "marlinCfg_{0}.yml"  # .format(runNumber) cfgFile name written by script to properly run marlin with all variables set
 
 ilcSoftVersion = 'v01-19-05'
 gridIlcSoftVersion = 'v01-19-05'
@@ -137,27 +137,28 @@ if runOnGrid is True:
     ilcSoftVersion = gridIlcSoftVersion
 
 initILCSoftScript = ilcSoftPath + ilcSoftVersion + "/init_ilcsoft.sh"
+marlinCfgFile = 'marlinCfg_{}.yml'  # .format(runNumber) cfgFile name written by script to properly run marlin with all variables set
+marlinCfgPath = processorPath
 
 print 'runOnGrid: {}'.format(runOnGrid)
 print 'dataPath: {}'.format(dataPath)
 
-inputFile = "{0}/DHCAL_{1}_I0_{2}.slcio"  # % (inputPath, runNumber, streamoutFileNumber)
-outputFile = "{0}/DHCAL_{1}_SO_Antoine"  # extension slcio/root added in script # % (outputPath,runNumber)
 inputPath = '{}/Raw/'.format(dataPath)
 outputPath = '{}/Streamout/'.format(dataPath)
 plotPath = '{}/Plots/'.format(dataPath)
 logPath = '{}/Logs/'.format(dataPath)
 
-xmlFile = "{0}/StreamoutProcessor.xml".format(processorPath)  # Path to XML file
-# marlinLib = "{0}/lib/libStreamoutMarlin.dylib".format(processorPath) # Marlin library for processor
 marlinLib = "{0}/lib/libStreamoutMarlin.so".format(processorPath)  # Marlin library for processor
 logFile = '{}/streamLog_{}'  # % (logPath, runNumber)
+# inputFile = 'DHCAL_{}_I0_{}.slcio'  # %(runNumber, streamoutFileNumber)
+outputFile = 'DHCAL_{}_SO_Antoine'  # extension slcio/root added in script # % runNumber
+xmlFile = 'StreamoutProcessor.xml'  # Path to XML file
 gridInputFiles = []
 if runOnGrid is True:
-    gridInputFiles.append(xmlFile)
-    gridInputFiles.append(marlinLib)
+    gridInputFiles.append(gridProcessorPath + xmlFile)
+    gridInputFiles.append(gridProcessorPath + '/lib/' + marlinLib)
     gridInputFiles.append(gridProcessorPath + 'marlin.py')
-    # gridInputFiles.append(marlinCfgFile)
+    # gridInputFiles.append(marlinCfgFile) # Need to be added in the main script as the name is dynamically generated with the runNumber
 
 
 ####################
