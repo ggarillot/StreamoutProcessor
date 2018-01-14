@@ -279,6 +279,9 @@ def main():
             except (subprocess.CalledProcessError, OSError):
                 sys.exit("\n[{}] - Folder '{}' not found...exiting".format(scriptName, gridInputPath))
 
+            if not inputDataFileList:
+                sys.exit("\n[{}] - No file found in '{}'...exiting".format(scriptName, gridInputPath))
+
         if conf.runOnGrid is False:
             outputFile = conf.outputPath + conf.outputFile.format(runNumber)
             marlinLib = conf.processorPath + 'lib/' + conf.marlinLib
@@ -286,8 +289,8 @@ def main():
         else:  # file is uploaded to the local folder on the WorkerNode
             marlinLib = 'lib/' + conf.marlinLib
             outputFile = conf.outputFile.format(runNumber)
-        conf.glob.LCIOInputFiles = ' '.join(inputDataFileList)
 
+        conf.glob.LCIOInputFiles = ' '.join(inputDataFileList)
         conf.marlinProc.LCIOOutputFile = outputFile + ".slcio"
         conf.marlinProc.ROOTOutputFile = outputFile + ".root"
 
