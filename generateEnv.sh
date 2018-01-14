@@ -6,6 +6,12 @@ cd ../.local/bin
 ./pip install pyyaml --user
 cd -
 echo " ================================================== "
+echo " --- Building sources "
+tar -xvzf processor.tgz
+source init_ilcsoft.sh # ilcsoft script
+mkdir build; cd build; cmake -C $ILCSOFT/ILCSoft.cmake ..; make install -j4; cd -
+echo " --- Done building sources\n"
+echo " ================================================== "
 echo " --- Runnning script " $1 " with option " $2
 ls -alhtr
 python $1 $2

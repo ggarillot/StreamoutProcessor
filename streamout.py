@@ -188,6 +188,24 @@ def setCliOptions(marlin, xmlSection):
 
 
 # -----------------------------------------------------------------------------
+def makeArxiv(folderToArxiv, arxivName, excludeList=[]):
+    '''Make a tgz arxiv from folderToArxiv skipping excludeList
+    '''
+    cmd = "tar"
+    excludeList.append(arxivName)  # Always exclude the arxivName id the arxiv
+    for f in excludeList and excludeList:
+        cmd += " --exclude " + f
+    cmd += " -zcvf " + arxivName + " " + folderToArxiv
+    # print(cmd + [a for a in args])
+    realCmd = cmd.split(' ')
+    print('Making arxiv of folder \'{}\' with cmd \'{}\''.format(folderToArxiv, realCmd))
+    try:
+        subprocess.check_output(realCmd)
+    except subprocess.CalledProcessError as e:
+        sys.exit(e.output)
+
+
+# -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def main():
     '''
@@ -229,7 +247,11 @@ def main():
         runList = runListArg.split(',')
     # --- /Load List of runs
 
-    # For grid run, define a dictionary of generated configFile and associated inputFiles for each run
+    # TODO modify the logic of the loop to make subjobs from the runList on the grid
+    # For now each run will make a job! Looooot of clutter
+
+    if conf.runOnGrid is True:
+        makeArxiv('./', 'processor.tgz', ['./.git', './.vscode', './build', './lib', './*.pyc', './*.yml'])
 
     for run in runList:
         # Check if runNumber match given period in configFile

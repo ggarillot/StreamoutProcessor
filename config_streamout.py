@@ -163,6 +163,7 @@ marlinLib = 'libStreamoutMarlin.' + libExt  # Marlin library for processor
 gridInputFiles = []
 if runOnGrid is True:
     gridInputFiles.append(gridProcessorPath + xmlFile)
+    gridInputFiles.append(initILCSoftScript)
     gridInputFiles.append(gridProcessorPath + '/lib/' + marlinLib)
     gridInputFiles.append(gridProcessorPath + 'marlin.py')
     gridInputFiles.append(gridProcessorPath + 'run_marlin.py')
