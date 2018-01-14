@@ -22,6 +22,9 @@ ELSE()
   MESSAGE( SEND_ERROR "Requires C++11 support. Please upgrade your compiler !" )
 ENDIF()
 
+# Add Rpath for osx
+SET( CMAKE_MACOSX_RPATH ON )
+
 ### DEPENDENCIES ############################################################
 
 FIND_PACKAGE( ILCUTIL REQUIRED COMPONENTS ILCSOFT_CMAKE_MODULES )
