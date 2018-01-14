@@ -203,8 +203,9 @@ def main():
             marlinLib = 'lib/' + conf.marlinLib
             outputFile = conf.outputFile.format(runNumber)
         conf.glob.LCIOInputFiles = ' '.join(inputDataFileList)
-        conf.streamoutProc.LCIOOutputFile = outputFile + ".slcio"
-        conf.streamoutProc.ROOTOutputFile = outputFile + ".root"
+
+        conf.marlinProc.LCIOOutputFile = outputFile + ".slcio"
+        conf.marlinProc.ROOTOutputFile = outputFile + ".root"
 
         if conf.runOnGrid is False:
             print("[{}] - output file : {}.slcio".format(scriptName, outputFile))
@@ -235,7 +236,7 @@ def main():
         marlin.setLibraries(marlinLib)
         marlin.setILCSoftScript(conf.initILCSoftScript)
         setCliOptions(marlin, conf.glob)  # TODO: Move to Marlin.py
-        setCliOptions(marlin, conf.streamoutProc)
+        setCliOptions(marlin, conf.marlinProc)
         marlin.writeConfigFile(marlinCfgFile)
 
         # Running locally

@@ -212,38 +212,38 @@ glob.LCIOInputFiles = []
 
 # Processor param
 ###
-streamoutProc = xmlOptionSection('MyStreamoutProcessor')
-# glob.inputCollectionType = "LCGenericObject"
-streamoutProc.InputCollectionName = "RU_XDAQ"
-# glob.outputCollectionType = "RawCalorimeterHit"
-streamoutProc.OutputCollectionName = "DHCALRawHits"
+marlinProc = xmlOptionSection('MyStreamoutProcessor')
+# glob.inputCollectionType = 'LCGenericObject'
+marlinProc.InputCollectionName = 'RU_XDAQ'
+# glob.outputCollectionType = 'RawCalorimeterHit'
+marlinProc.OutputCollectionName = 'DHCALRawHits'
 # streamoutProc.exportROOT = True # Write to root file (Not implemented yet)
 
-streamoutProc.RU_SHIFT = 23  # Not used?
-streamoutProc.DropFirstRU = False  # Drop first Trigger
-streamoutProc.SkipFullAsic = True  # Skip asic with all 64 channels lit up
+marlinProc.RU_SHIFT = 23  # Not used?
+marlinProc.DropFirstRU = False  # Drop first Trigger
+marlinProc.SkipFullAsic = True  # Skip asic with all 64 channels lit up
 
-streamoutProc.CerenkovDifId = 3  # Since May2015
-streamoutProc.CerenkovOutDifId = 3
-streamoutProc.CerenkovOutAsicId = 1
-streamoutProc.CerenkovOutTimeDelay = 6
+marlinProc.CerenkovDifId = 3  # Since May2015
+marlinProc.CerenkovOutDifId = 3
+marlinProc.CerenkovOutAsicId = 1
+marlinProc.CerenkovOutTimeDelay = 6
 
-streamoutProc.Before2016Data = True  # Bool for Ecal data detection (change in data format in 2016) Overridden in the following lines
+marlinProc.Before2016Data = True  # Bool for Ecal data detection (change in data format in 2016) Overridden in the following lines
 
-if runPeriod.find("2012") != -1:
-    streamoutProc.XDAQ_SHIFT = 92  # ? 2012
+if '2012' in runPeriod:
+    marlinProc.XDAQ_SHIFT = 92  # ? 2012
 
-elif runPeriod.find("2014") != -1:
-    streamoutProc.XDAQ_SHIFT = 24  # 2014-2015
-    streamoutProc.CerenkovDifId = 1  # Dec2014
+elif '2014' in runPeriod:
+    marlinProc.XDAQ_SHIFT = 24  # 2014-2015
+    marlinProc.CerenkovDifId = 1  # Dec2014
 
-elif runPeriod.find("2015") != -1:
-    streamoutProc.XDAQ_SHIFT = 24  # 2014-2015
+elif '2015' in runPeriod:
+    marlinProc.XDAQ_SHIFT = 24  # 2014-2015
 
-elif runPeriod.find("2016") != -1 or runPeriod.find("2017") != -1:
-    streamoutProc.XDAQ_SHIFT = 20  # Since June2016
-    streamoutProc.Before2016Data = False  # Bool for Ecal data detection
-    streamoutProc.TreatEcal = False
+elif '2016' in runPeriod or '2017' in runPeriod:
+    marlinProc.XDAQ_SHIFT = 20  # Since June2016
+    marlinProc.Before2016Data = False  # Bool for Ecal data detection
+    marlinProc.TreatEcal = False
     # streamoutProc.EcalDetectorIds = "201 1100"
 
 else:
