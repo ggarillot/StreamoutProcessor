@@ -119,7 +119,6 @@ gridProcessorPath = eos_home + "Software/Streamout/"
 # Global variables
 ####################
 logToFile = False
-
 ilcSoftVersion = 'v01-19-05'
 gridIlcSoftVersion = 'v01-19-05'
 ilcSoftPath = '/opt/ilcsoft/'
@@ -148,11 +147,17 @@ outputPath = '{}/Streamout/'.format(dataPath)
 plotPath = '{}/Plots/'.format(dataPath)
 logPath = '{}/Logs/'.format(dataPath)
 
-marlinLib = "{0}/lib/libStreamoutMarlin.so".format(processorPath)  # Marlin library for processor
 logFile = '{}/streamLog_{}'  # % (logPath, runNumber)
 # inputFile = 'DHCAL_{}_I0_{}.slcio'  # %(runNumber, streamoutFileNumber)
 outputFile = 'DHCAL_{}_SO_Antoine'  # extension slcio/root added in script # % runNumber
 xmlFile = 'StreamoutProcessor.xml'  # Path to XML file
+
+libExt = 'so'
+
+if sys.platform == 'darwin':
+    libExt = 'dylib'
+marlinLib = 'libStreamoutMarlin.' + libExt  # Marlin library for processor
+
 gridInputFiles = []
 if runOnGrid is True:
     gridInputFiles.append(gridProcessorPath + xmlFile)
