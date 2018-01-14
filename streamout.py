@@ -288,7 +288,7 @@ def main():
                 except TreeError:
                     try:
                         jobtree.mkdir(treePath)
-                    except:  # mkdir should write all missing folder if any....apparently not true
+                    except TreeError:  # mkdir should write all missing folder if any....apparently not true
                         print("WhatThe?")
                         jobtree.mkdir(conf.runPeriod)
                         jobtree.mkdir(treePath)
@@ -347,9 +347,9 @@ def main():
                 j.inputdata = inputData
 
                 jobtree.add(j)
-                # queues.add(j.submit)
-                j.submit()
 
+                queues.add(j.submit)
+                # j.submit()
                 print("\n[{}] ... submitting job done.\n".format(scriptName))
 
             except IncompleteJobSubmissionError:
