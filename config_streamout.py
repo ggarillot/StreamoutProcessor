@@ -103,74 +103,56 @@ voms = 'calice'
 # CE = 'lyogrid07.in2p3.fr:8443/cream-pbs-calice'
 # CE = 'lpnhe-cream.in2p3.fr:8443/cream-pbs-calice'
 CE = 'grid-cr0.desy.de:8443/cream-pbs-desy'
-carefulLoaderDir = "/eos/user/a/apingaul/CALICE/script/"
 
-gridDownloader = '/home/ilc/pingault/script/carefulDownload.sh'
-gridUploader = '/home/ilc/pingault/script/carefulUpload.sh'
 LCG_CATALOG_TYPE = 'lfc'
 LFC_HOST = 'grid-lfc.desy.de'
+carefulLoaderDir = '/eos/user/a/apingaul/CALICE/script/'
+gridDownloader = carefulLoaderDir + 'carefulDownload.sh'
+gridUploader = carefulLoaderDir + 'carefulUpload.sh'
 
 eos_home = '/eos/user/a/apingaul/CALICE/'
-# gridDataPath = eos_home + 'data/' + runPeriod
-gridIlcSoftPath = "/cvmfs/ilc.desy.de/sw/x86_64_gcc49_sl6/"
+processorPath = eos_home + "Software/Streamout/"
 gridProcessorPath = eos_home + "Software/Streamout/"
-
-gridInputFiles = []
-# xmlFile and marlinLibrary are added after
-# gridProcessorPath + 'run_marlin.py',
-# gridProcessorPath + 'marlin.py',
-# gridProcessorPath + 'StreamoutProcessor.xml'
-# gridUploader,
-# gridDownloader
-# ]
-# os.path.relpath(xmlFile, processorPath + '/'),
-# '%s/DifGeom/m3_bonneteau.xml' %path
 
 ####################
 # Global variables
 ####################
 logToFile = False
-ilcSoftVersion = "v01-19-01"
-# ilcSoftVersion = "v01-17-09"
-ilcSoftPath = "/opt/ilcsoft/"
-if runOnGrid is True:
-    ilcSoftPath = gridIlcSoftPath
-initILCSoftScript = ilcSoftPath + ilcSoftVersion + "/init_ilcsoft.sh"
 marlinCfgFile = "marlinCfg_{0}.yml"  # .format(runNumber) cfgFile name written by script to properly run marlin with all variables set
 
+ilcSoftVersion = 'v01-19-05'
+gridIlcSoftVersion = 'v01-19-05'
+ilcSoftPath = '/opt/ilcsoft/'
+gridIlcSoftPath = '/cvmfs/ilc.desy.de/sw/x86_64_gcc49_sl6/'
 
 # General Path to find/store data: the following assumes that all data is in a subfolder of dataPath
 # Overwritten by gridDataPath if runOnGrid is True
-# dataPath = "/Users/antoine/CALICE/DataAnalysis/data"
-dataPath = "/Volumes/PagosDisk/CALICE/data/%s" % runPeriod  # Local
-# dataPath = "/home/acqilc/dqmsoftware/SDHCAL/SDHCAL_EventReader/python/" # Local
-dataPath = "/data/NAS/H2SEPT2017/" # Local
-gridDataPath = eos_home + 'Data/' + runPeriod
-# dataPath = "/scracth/SDHCAL/data/%s" % runPeriod # Lyoserv
-# dataPath = "/eos/users/a/apingaul/CALICE/Data%s" % runPeriod # Lxplus
+dataPath = eos_home + 'Data/' + runPeriod
+gridDataPath = 'SDHCAL/pingault/TB/CERN/' + runPeriod  # Ganga automatically prepend /grid/calice/ before the path
 
 if runOnGrid is True:
     dataPath = gridDataPath
+    processorPath = gridProcessorPath
+    ilcSoftPath = gridIlcSoftPath
+    ilcSoftVersion = gridIlcSoftVersion
 
-print "runOnGrid: {0}".format(runOnGrid)
-print "dataPath: {0}".format(dataPath)
+initILCSoftScript = ilcSoftPath + ilcSoftVersion + "/init_ilcsoft.sh"
 
-inputPath = "%s/Raw" % dataPath
-outputPath = "%s/Streamout" % dataPath
-plotPath = "%s/Plots" % dataPath
-logPath = "%s/Logs" % dataPath
+print 'runOnGrid: {}'.format(runOnGrid)
+print 'dataPath: {}'.format(dataPath)
 
-logFile = "{0}/streamLog_{1}"  # % (logPath, runNumber)
 inputFile = "{0}/DHCAL_{1}_I0_{2}.slcio"  # % (inputPath, runNumber, streamoutFileNumber)
 outputFile = "{0}/DHCAL_{1}_SO_Antoine"  # extension slcio/root added in script # % (outputPath,runNumber)
-# outputFile = "{0}/DHCAL_{1}_SO_CerDebug" # extension slcio/root added in script # % (outputPath,runNumber)
+inputPath = '{}/Raw/'.format(dataPath)
+outputPath = '{}/Streamout/'.format(dataPath)
+plotPath = '{}/Plots/'.format(dataPath)
+logPath = '{}/Logs/'.format(dataPath)
 
-processorPath = "/eos/user/a/apingaul/CALICE/Software/Streamout"
-if runOnGrid is True:
-    processorPath = gridProcessorPath
 xmlFile = "{0}/StreamoutProcessor.xml".format(processorPath)  # Path to XML file
 # marlinLib = "{0}/lib/libStreamoutMarlin.dylib".format(processorPath) # Marlin library for processor
 marlinLib = "{0}/lib/libStreamoutMarlin.so".format(processorPath)  # Marlin library for processor
+logFile = '{}/streamLog_{}'  # % (logPath, runNumber)
+gridInputFiles = []
 if runOnGrid is True:
     gridInputFiles.append(xmlFile)
     gridInputFiles.append(marlinLib)
