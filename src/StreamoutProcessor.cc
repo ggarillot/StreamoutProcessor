@@ -252,7 +252,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         streamlog_out(WARNING) << " Dropping RU.....\n\n" << std::endl;
         continue;
       }
-    LMGeneric *pLCGenericObject = dynamic_cast<LMGeneric *> (pLCCollection->getElementAt(e));
+    LMGeneric *pLCGenericObject = static_cast<LMGeneric *> (pLCCollection->getElementAt(e));
 
     if (NULL == pLCGenericObject)
       {
