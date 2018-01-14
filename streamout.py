@@ -294,21 +294,17 @@ def main():
                         jobtree.mkdir(treePath)
                     jobtree.cd(treePath)
 
-                eos_installation = '/afs/cern.ch/project/eos/installation/user/'
-                eos_home = '/eos/user/a/apingaul/CALICE/'
-
                 # Update ganga configuration for eos access
-                config.Output.MassStorageFile['defaultProtocol'] = 'root://eosuser.cern.ch'
-                config.Output.MassStorageFile['uploadOptions']['cp_cmd'] = eos_installation + 'bin/eos.select cp'
-                config.Output.MassStorageFile['uploadOptions']['ls_cmd'] = eos_installation + 'bin/eos.select ls'
-                config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'] = eos_installation + 'bin/eos.select mkdir'
-                config.Output.MassStorageFile['uploadOptions']['path'] = eos_home
+                # config.Output.MassStorageFile['defaultProtocol'] = 'root://eosuser.cern.ch'
+                # config.Output.MassStorageFile['fileExtensions'] = ["*.slcio", "*.root"]
+                # config.Output.MassStorageFile['uploadOptions']['path'] = conf.eos_home
+
                 # Print it
-                print(config.Output.MassStorageFile['defaultProtocol'])
-                print(config.Output.MassStorageFile['uploadOptions']['cp_cmd'])
-                print(config.Output.MassStorageFile['uploadOptions']['ls_cmd'])
-                print(config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
-                print(config.Output.MassStorageFile['uploadOptions']['path'])
+                # print(config.Output.MassStorageFile['defaultProtocol'])
+                # print(config.Output.MassStorageFile['uploadOptions']['cp_cmd'])
+                # print(config.Output.MassStorageFile['uploadOptions']['ls_cmd'])
+                # print(config.Output.MassStorageFile['uploadOptions']['mkdir_cmd'])
+                # print(config.Output.MassStorageFile['uploadOptions']['path'])
 
                 inputFiles = []
                 for f in conf.gridInputFiles:
@@ -321,27 +317,43 @@ def main():
                 for item in [inputDataFileList]:
                     inputList = []
                     for f in item:
-                        l.append(MassStorageFile(f))
-                    print("\nl=", l, "\n")
-                    for f in l:
-                        print("\nf=", f, "\n")
-
-                inputData = GangaDataset(treat_as_inputfiles=False, files=[f for f in l])
-
-                print('\n\ninputDataType:\n', type(inputData))
-                print('\n\ninputData:\n', inputData)
-                for item in inputData:
-                    print(type(item))
-                    print(item)
+                        inputList.append(
+                            LCGSEFile(
+                                namePattern=f,
+                                se_rpath=conf.inputPath,
+                                lfc_host=conf.lfc_host,
+                                se=conf.SE,
+                                credential_requirements=VomsProxy(vo=conf.voms)))
+                inputData = GangaDataset(treat_as_inputfiles=True, files=[f for f in inputList])
 
                 j = createJob(
-                    executable='run_marlin.py', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend,
-                    backendCE=conf.CE, voms=conf.voms
-                )
-                # j = createJob(executable='runStreamout.sh', args=[marlinCfgFile], name=str(runNumber), backend=conf.backend, backendCE=conf.CE, voms=conf.voms)
-                j.comment = "Streamout " + conf.runPeriod
+                    executable='generateEnv.sh',
+                    args=['run_marlin.py', marlinCfgFile],
+                    comment=conf.processorType + ' ' + conf.runPeriod,
+                    name=str(runNumber),
+                    backend=conf.backend,
+                    backendCE=conf.CE,
+                    voms=conf.voms)
+                # j.outputfiles = [
+                #     MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')
+                # ]
+                # NamePattern for LCGSEFile needs to be exact and not use wildcard otherwise the guid of the file is
+                # not set at the end of the job https://github.com/ganga-devs/ganga/issues/1186
+                # Only the first file will have its locations attribute updated (others fail because of the \n at the begining of the line...)
+                # TODO: make script to recover name from the files that were not uploaded and make the proper alias
                 j.outputfiles = [
-                    MassStorageFile(namePattern="*.*", outputfilenameformat='GridOutput/Streamout/{jid}/{fname}')
+                    LCGSEFile(
+                        namePattern=outputFile + ".slcio",
+                        se_rpath=conf.outputPath,
+                        lfc_host=conf.lfc_host,
+                        se=conf.SE,
+                        credential_requirements=VomsProxy(vo=conf.voms)),
+                    LCGSEFile(
+                        namePattern=outputFile + ".root",
+                        se_rpath=conf.outputPath,
+                        lfc_host=conf.lfc_host,
+                        se=conf.SE,
+                        credential_requirements=VomsProxy(vo=conf.voms))
                 ]
                 j.inputfiles = inputFiles
                 j.inputdata = inputData

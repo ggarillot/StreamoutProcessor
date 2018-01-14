@@ -163,6 +163,7 @@ if runOnGrid is True:
     gridInputFiles.append(gridProcessorPath + xmlFile)
     gridInputFiles.append(gridProcessorPath + '/lib/' + marlinLib)
     gridInputFiles.append(gridProcessorPath + 'marlin.py')
+    gridInputFiles.append(gridProcessorPath + 'run_marlin.py')
     # gridInputFiles.append(marlinCfgFile) # Need to be added in the main script as the name is dynamically generated with the runNumber
 
 
