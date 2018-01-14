@@ -29,8 +29,49 @@ sys.path.append(".")
 
 
 # -----------------------------------------------------------------------------
+def checkForConfigFile(configFile):
+    '''check that all needed parameters are defined in the configFile,
+        Exit if a parameter is not found
     '''
+    try:
+        check = configFile.runPeriod
+        # check = configFile.runList
+        check = configFile.inputPath
+        check = configFile.outputPath
+        check = configFile.outputFile
+        check = configFile.processorPath
+        check = configFile.marlinLib
+        check = configFile.marlinCfgFile
+        check = configFile.marlinCfgPath
+        check = configFile.initILCSoftScript
 
+        if 'Streamout' not in configFile.processorType:
+            check = configFile.geomFile
+
+        check = configFile.marlinProc
+        check = configFile.glob
+        check = configFile.glob.LCIOInputFiles
+
+        # Parameters to scp files if not present
+        check = configFile.serverName
+        check = configFile.serverDataPath
+
+        if configFile.runOnGrid is True:  # Don't check for grid param if running locally
+            check = configFile.voms
+            check = configFile.lcg_catalog_type
+            check = configFile.lfc_host
+            check = configFile.gridInputFiles
+            check = configFile.lfc_host
+            check = configFile.SE
+            check = configFile.backend
+            check = configFile.CE
+        else:
+            check = configFile.logPath
+            check = configFile.logFile
+
+    except AttributeError as e:
+        par = e.message.split(' ')[-1]
+        sys.exit('[{}] - Parameter {} not set in configFile {} '.format(os.path.basename(__file__), par, configFile))
 
 
 # -----------------------------------------------------------------------------
@@ -157,6 +198,7 @@ def main():
         sys.exit("Please give : configFile - runNumber(s)(optional if set up in configFile)")
     # --- /Parse CLI arguments
 
+    checkForConfigFile(conf)
     # --- Load List of runs
     if runListArg is None:  # if no runs on CLI, load list from configFile
         try:
