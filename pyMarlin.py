@@ -253,6 +253,7 @@ def main():
     if conf.runOnGrid is True:
         makeArxiv('./', 'processor.tgz', ['./.git', './.vscode', './build', './lib', './*.pyc', './*.yml'])
 
+    fileNotFoundList = []
     for run in runList:
         # Check if runNumber match given period in configFile
         checkPeriod(str(run), conf.runPeriod, configFile)
@@ -289,7 +290,8 @@ def main():
                 sys.exit("\n[{}] - Folder '{}' not found...exiting".format(scriptName, gridInputPath))
 
             if not inputDataFileList:
-                sys.exit("\n[{}] - No file found in '{}'...exiting".format(scriptName, gridInputPath))
+                fileNotFoundList.append(str(runNumber))
+                print("\n[{}] - File  for run '{}' not found in '{}'".format(scriptName, str(runNumber), gridInputPath))
 
         if conf.runOnGrid is False:
             outputFile = conf.outputPath + conf.outputFile.format(runNumber)
@@ -482,6 +484,13 @@ def main():
 
             except IncompleteJobSubmissionError:
                 sys.exit("[{}] --- Failed to submit job ".format(scriptName))
+
+    if fileNotFoundList:
+        print('-' * 120)
+        print("[{}] --- Following files were not found: ".format(scriptName))
+        for f in fileNotFoundList:
+            print("\t\t" + str(f))
+        print('-' * 120)
 
 
 # -----------------------------------------------------------------------------
