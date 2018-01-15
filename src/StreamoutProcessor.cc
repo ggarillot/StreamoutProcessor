@@ -307,7 +307,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         return;
       }
 #endif
-      streamlog_out(MESSAGE) << green << " - Hit in Bif " << difId << "\t NFrames : " << pDifPtr->getNumberOfFrames() << normal << std::endl;
+      streamlog_out(DEBUG) << green << " - Hit in Bif " << difId << "\t NFrames : " << pDifPtr->getNumberOfFrames() << normal << std::endl;
       for (uint32_t i = 0; i < pDifPtr->getNumberOfFrames(); i++)
       {
         streamlog_out(DEBUG) << " - FrameTime : " << pDifPtr->getFrameTimeToTrigger(i) << std::endl;
@@ -469,7 +469,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         //     " - dif/asic/chan : " << difId << " " << asicId << " " << chanId <<
         //     " - id0 : " << id0 << " id1 : " << id1 <<
         //     " - ampBitSet : " << amplitudeBitSet.to_ulong() <<
-        //     " - TimeStamp : " << timeStamp << 
+        //     " - TimeStamp : " << timeStamp <<
         //     "\n--- True pRawCalorimeterHit value: " <<
         //     " - id0 : " << pRawCalorimeterHit->getCellID0() << " id1 : " <<  pRawCalorimeterHit->getCellID1()  <<
         //     " - ampBitSet : " << pRawCalorimeterHit->getAmplitude() <<

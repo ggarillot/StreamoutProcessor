@@ -69,7 +69,8 @@ public:
 
   void processReconstructedEvent(EVENT::LCEvent *pLCEvent)
   {
-    streamlog_out( MESSAGE ) <<  " Writing rec event no " << pLCEvent->getEventNumber() << " to disk" << std::endl;
+    if (0 == pLCEvent->getEventNumber() % 100)
+      streamlog_out( MESSAGE ) <<  " Writing rec event no " << pLCEvent->getEventNumber() << " to disk" << std::endl;
 
     // UTIL::LCTOOLS::dumpEvent(pLCEvent);
 
