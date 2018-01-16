@@ -462,14 +462,19 @@ def main():
                         se_rpath=conf.outputPath,
                         lfc_host=conf.lfc_host,
                         se=conf.SE,
-                        credential_requirements=VomsProxy(vo=conf.voms)),
-                    LCGSEFile(
-                        namePattern=outputFile + ".root",
-                        se_rpath=conf.outputPath,
-                        lfc_host=conf.lfc_host,
-                        se=conf.SE,
                         credential_requirements=VomsProxy(vo=conf.voms))
                 ]
+                # TODO: Remove ugly 'hack'
+                if 'Streamout' not in conf.processorType:
+                    j.outputfiles += [
+                        LCGSEFile(
+                            namePattern=outputFile + ".root",
+                            se_rpath=conf.outputPath,
+                            lfc_host=conf.lfc_host,
+                            se=conf.SE,
+                            credential_requirements=VomsProxy(vo=conf.voms))
+                    ]
+
                 j.inputfiles = inputFiles
                 j.inputdata = inputData
 
