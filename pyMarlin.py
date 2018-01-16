@@ -478,7 +478,9 @@ def main():
                 j.postprocessors.append(CustomChecker(module='GangaCheckerMoveFileOnGrid.py'))
                 jobtree.add(j)
 
-                queues.add(j.submit)
+                # Don't submit if inputdata is empty
+                if j.inputdata.files:
+                    queues.add(j.submit)
                 # j.submit()
                 print("\n[{}] ... submitting job done.\n".format(scriptName))
 
