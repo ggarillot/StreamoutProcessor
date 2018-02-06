@@ -5,6 +5,12 @@ from Ganga.Core.exceptions import ProtectedAttributeError
 import time
 import os
 
+'''
+lcgse TDHCAL_Antoine_736572POS.slcio TDHCAL_Antoine_736572POS.slcio ->guid:382bf599-77b1-49e7-8ead-ffba57bea9e1
+\nlcgse TDHCAL_Antoine_736572POS.root TDHCAL_Antoine_736572POS.root ->guid:4a7697ce-f654-4c6c-8f9f-27d7f12f5235
+\n
+'''
+
 
 def fileExists(f, fName):
     cmd = 'lcg-ls --vo {} lfn:{}'.format(f.credential_requirements.vo, fName)
@@ -52,6 +58,7 @@ def check(j):
     good = True
     for f in outputFiles:
         fName = '/grid/{}/{}{}'.format(f.credential_requirements.vo, f.se_rpath, f.namePattern)
+        # TODO: check rules in ganga DiracFile for renaming!
         # print 'fName: ', fName
         if fileExists(f, fName):
             fName += time.strftime("-%Y-%m-%d_%H-%M-%S")

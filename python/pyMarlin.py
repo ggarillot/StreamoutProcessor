@@ -109,6 +109,7 @@ def checkPeriod(runNumber, runPeriod, configFile):
     ''' Check runNumber is associated to correct runPeriod
         Abort execution if not
     '''
+
     def periodError(goodPeriod):
         return "[{}] - RunNumber '{}' is from TestBeam '{}', you selected '{}' in configFile '{}'".format(
             os.path.basename(__file__), runNumber, goodPeriod, runPeriod, configFile)
@@ -257,13 +258,15 @@ def main():
         runNumber = int(run)
         #   Create list of files to run on
         if conf.runOnGrid is False:
-            print("[{}] - Looking for files to process for run '{}' in '{}'... ".format(scriptName, runNumber, conf.inputPath))
+            print("[{}] - Looking for files to process for run '{}' in '{}'... ".format(
+                scriptName, runNumber, conf.inputPath))
             if os.path.exists(conf.inputPath) is False:
                 sys.exit("\n[{}] - Folder '{}' does not exist...exiting".format(scriptName, conf.inputPath))
 
             inputDataFileList = [f for f in os.listdir(conf.inputPath) if str(runNumber) in f]
             if not inputDataFileList:
-                doScp = raw_input("[{}] - No file found...download it from '{}' ? (y/n)".format(scriptName, conf.serverName))
+                doScp = raw_input("[{}] - No file found...download it from '{}' ? (y/n)".format(
+                    scriptName, conf.serverName))
                 if doScp == 'y':
                     scp(runNumber, conf.inputFile, conf.serverName, conf.serverDataPath, conf.inputPath)
                 else:
@@ -358,9 +361,9 @@ def main():
             print("[{}] --- Output is logged to '{}'".format(scriptName, log))
             beginTime = time.time()
             if conf.logToFile is True:
-                subprocess.call(['python', 'run_marlin.py', conf.marlinCfgPath + marlinCfgFile], stdout=log, stderr=log)
+                subprocess.call(['python', 'python/run_marlin.py', conf.marlinCfgPath + marlinCfgFile], stdout=log, stderr=log)
             else:
-                subprocess.call(['python', 'run_marlin.py', conf.marlinCfgPath + marlinCfgFile])
+                subprocess.call(['python', 'python/run_marlin.py', conf.marlinCfgPath + marlinCfgFile])
 
             print('[{}] - Running Marlin...OK - '.format(scriptName), end='')
             try:
@@ -439,8 +442,8 @@ def main():
                 inputData = GangaDataset(treat_as_inputfiles=True, files=[f for f in inputList])
 
                 j = createJob(
-                    executable='generateEnv.sh',
-                    args=['run_marlin.py', marlinCfgFile],
+                    executable='config/generateEnv.sh',
+                    args=['python/run_marlin.py', marlinCfgFile],
                     comment=conf.processorType + ' ' + conf.runPeriod,
                     name=str(runNumber),
                     backend=conf.backend,
@@ -477,7 +480,7 @@ def main():
 
                 # Add a postprocessor that will move the outputfiles on the grid to their proper location
                 # This needs to be present in the same folder
-                j.postprocessors.append(CustomChecker(module='GangaCheckerMoveFileOnGrid.py'))
+                j.postprocessors.append(CustomChecker(module='python/GangaCheckerMoveFileOnGrid.py'))
                 jobtree.add(j)
 
                 # Don't submit if inputdata is empty
