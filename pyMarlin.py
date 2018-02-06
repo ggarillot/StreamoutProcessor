@@ -12,12 +12,12 @@ import sys
 import time
 import subprocess
 
-from marlin import Marlin
 import pymysql as pmsql
+import yaml
 
+from marlin import Marlin
 import dbUtils as dbu  # custom interfaces to TestBeam databases
 
-import yaml
 try:
     import Ganga
 except ImportError:
@@ -142,11 +142,8 @@ def checkPeriod(runNumber, runPeriod, configFile):
 def scp(runNumber, fName, serverName, serverPath, localPath):
     ''' Download file from serverName:serverPath to localPath
     '''
-    print(
-        "[{}] - Downloading run '{}' from {}:{}".format(
-            os.path.basename(__file__), runNumber, serverName, serverPath
-        )
-    )
+    print("[{}] - Downloading run '{}' from {}:{}".format(
+        os.path.basename(__file__), runNumber, serverName, serverPath))
     fName.format(runNumber)
     scpPath = serverName + ":" + serverPath + fName.format(runNumber)
     print(scpPath)
@@ -221,7 +218,7 @@ def main():
         # --- Load configuration File
         configFile = sys.argv[1]
         try:
-            exec("import {0} as conf".format(configFile))
+            exec ("import {0} as conf".format(configFile.replace('/', '.')))
         except (ImportError, SyntaxError):
             sys.exit("[{}] - Cannot import config file '{}'".format(scriptName, configFile))
         # --- /Load configuration File
@@ -229,9 +226,9 @@ def main():
             # --- Load runList
             runListArg = sys.argv[2]
 
-    elif conf.runList:  # runNumber configured in configFile
-        runList = conf.runList
-        print("[{}] : Running with configuration file '{}' on runs '{}'".format(scriptName, configFile, runList))
+        elif conf.runList:  # runNumber configured in configFile
+            runList = conf.runList
+            print("[{}] : Running with configuration file '{}' on runs '{}'".format(scriptName, configFile, runList))
     else:
         sys.exit("Please give : configFile - runNumber(s)(optional if set up in configFile)")
     # --- /Parse CLI arguments
