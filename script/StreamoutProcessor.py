@@ -17,9 +17,8 @@ class Params :
 		self.CerenkovOutTimeDelay = 6
 
 		self.Before2016Data = 'true'  # Bool for Ecal data detection (change in data format in 2016) Overridden in the following lines
-	    self.TreatEcal = 'false'
-
-    	self.XDAQ_SHIFT = 24
+		self.TreatEcal = 'false'
+		self.XDAQ_SHIFT = 24
 
 
 def launch(a , files) :
@@ -31,7 +30,7 @@ def launch(a , files) :
 	pid = os.getpid()
 
 	xmlFileName = str(pid) + '.xml'
-	tempOutputFile = str(pid) + '.root'
+	tempOutputFile = str(pid) + '.slcio'
 
 
 	xml = '''<marlin>

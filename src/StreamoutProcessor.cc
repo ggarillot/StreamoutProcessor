@@ -353,9 +353,9 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
         {
           if (difId == m_cerenkovDifId)
           {
-            streamlog_out(ERROR) << " Removing Full asic from cerenkovDif ??? " << std::endl;
+            streamlog_out(DEBUG) << " Removing Full asic from cerenkovDif ??? " << std::endl;
           }
-            streamlog_out(ERROR) << " Removing Full asic" << std::endl;
+            streamlog_out(DEBUG) << " Removing Full asic" << std::endl;
           continue;
       }
       }
