@@ -7,6 +7,7 @@ class Params :
 	def __init__(self) :
 		self.outputFileName = 'analysis.slcio'
 		self.maxRecordNumber = 0
+		self.skipNEvents = 0
 		self.RU_SHIFT = 23  # Not used?
 		self.DropFirstRU = 'false'  # Drop first Trigger
 		self.SkipFullAsic = 'true'  # Skip asic with all 64 channels lit up
@@ -41,7 +42,7 @@ def launch(a , files) :
   <global>
     <parameter name="LCIOInputFiles">''' + fileList + '''</parameter>
     <parameter name="MaxRecordNumber" value="''' + str(a.maxRecordNumber) + '''"/>
-    <!--parameter name="SkipNEvents" value="18000" /-->
+    <parameter name="SkipNEvents" value="''' + str(a.skipNEvents) + '''" />
     <parameter name="Verbosity" options="DEBUG0-4,MESSAGE0-4,WARNING0-4,ERROR0-4,SILENT"> MESSAGE </parameter>
   </global>
 
