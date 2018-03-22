@@ -290,12 +290,13 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
 
     if ( difId == m_cerenkovDifId )
     {
+#if DEBUGLOG
       std::vector<unsigned char*> theFrames_;
       std::vector<unsigned char*> theLines_;
 
       theFrames_.clear();
       theLines_.clear();
-#if DEBUGLOG
+
       pDifPtr->dumpDIFInfo();
       try
       {
@@ -304,6 +305,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
       {
         streamlog_out( ERROR ) << "DIF " << pDifPtr->getID() << " " << e << std::endl;
         delete pRawCalorimeterHitCollection;
+        delete pDifPtr;
         return;
       }
 #endif
@@ -506,6 +508,7 @@ void StreamoutProcessor::processEvent( LCEvent * pLCEvent )
     parameterKey << "DIF" << pDifPtr->getID() << "_Triggers";
 
     pRawCalorimeterHitCollection->parameters().setValues(parameterKey.str(), trigger);
+    delete pDifPtr;
   }
 
   // check if any hits have been added to the collection
